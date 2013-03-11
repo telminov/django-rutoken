@@ -1,4 +1,6 @@
 $(function(){
-    plugin = new CryptoPlugin();
-    plugin.refreshDevices('#id_devices');
+    crypto_ui = new CryptoUI({
+        content_box: '.box-container-toggle'
+    });
+    crypto_ui.refreshDevices('#id_devices');
 });
