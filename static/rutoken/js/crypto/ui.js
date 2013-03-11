@@ -1,15 +1,17 @@
 /**
  * Хелпер по работе с токеном в интерфейсе
  * @param param - параметры объекта:
- *      content_box - css-селектор контейнера с контентом, который должен реагировать на взаимодействие с ключом
+ *      contentBox - css-селектор контейнера с контентом, который должен реагировать на взаимодействие с ключом
+ *      devicesSelect - css-селектор списка устройств
  *      crypto - объект CryptoPlugin (необязательный)
  * @constructor
  */
 function CryptoUI(param) {
     // обязательные параметры
-    if (!param.content_box) throw 'Не задан параметр content_box"';
+    if (!param.contentBox) throw 'Не задан параметр contentBox"';
 
-    this.content_box = $(param.content_box);
+    this.contentBox = $(param.contentBox);
+    this.devicesSelect = $(param.devicesSelect);
     this.crypto = param.crypto || new CryptoPlugin();
 
     // проверка валидности плагина
@@ -20,16 +22,16 @@ function CryptoUI(param) {
 CryptoUI.prototype = {
 
     /**
-     * Обновляет список устройств
-     * @param devices_select - select-элемент, в который быдет выводится списо доступных устройств
+     * Обновляет список устройств.
+     * @param resultCallback - обработчик окончания обновления списка устройств
      */
-    refreshDevices: function(devices_select) {
+    refreshDevices: function(resultCallback) {
         var ui = this;
-        devices_select = $(devices_select);
+        if (!ui.devicesSelect) throw 'Не задан параметр "devicesSelect"';
 
         // обнулим текущий список
-        devices_select.find('option').remove();
-        devices_select.append('<option>Список обновляется...</option>');
+        ui.devicesSelect.find('option').remove();
+        ui.devicesSelect.append('<option>Список обновляется...</option>');
 
         // запустим обновлений списка устройств
         this.crypto.refreshDevicesInfo(
@@ -41,12 +43,16 @@ CryptoUI.prototype = {
          * по результатам обновления инфы об устроствах
          * отрисуем список устройств
          */
-        function refreshCallback(deviceIDs, devicesInfo) {
-            devices_select.find('option').remove();
-            $.each(ui.crypto.getDeviceIDs(), function(i, deviceID){
-                var label = ui.crypto.devices[deviceID].label;
-                var model = ui.crypto.devices[deviceID].model;
-                devices_select.append('<option value="'+ deviceID +'">'+ label +' #'+ deviceID + ' ('+ model +')</option>');
+        function refreshCallback(deviceIDs, devices) {
+            ui.devicesSelect.find('option').remove();
+
+            $.each(deviceIDs, function(i, deviceID){
+                var device = devices[deviceID];
+                var option_html = '<option value="'+ device.id +'">'+ device.getExpandLabel() +'</option>';
+                ui.devicesSelect.append(option_html);
+
+                if (resultCallback)
+                    resultCallback();
             })
         }
 
@@ -55,20 +61,113 @@ CryptoUI.prototype = {
         }
     },
 
+    /**
+     * логин на устройстве
+     * @param loginModal - селектор модального bootstrap-окна (http://twitter.github.com/bootstrap/javascript.html#modals)
+     */
+    login: function(loginModal) {
+        var ui = this;
+        var selectedDeviceID = this.devicesSelect.val();
+
+        if (!selectedDeviceID) {
+            this.errorReport(["Не выбрано устройство"]);
+            return;
+        }
+
+        var pinInput = loginModal.find('input:first');
+        var primaryButton = loginModal.find('.btn-primary');
+
+        // откроем окно
+        loginModal.modal();
+        loginModal.on('shown', shownHandler);
+        loginModal.on('hidden', hiddenHandler);
+        loginModal.find(':header').first().text(device.getExpandLabel());
+
+        // повесим обработчики ввода пароля
+        primaryButton.click(pinHandler);
+        pinInput.keypress(
+            function(e){
+                if (e.keyCode == 13)        // ввод Enter
+                    pinHandler()
+            }
+        );
+
+
+        function shownHandler() {
+            pinInput.focus();
+        }
+
+        /**
+         * снимем обработчики ввода пин-кода и очистим поле ввода
+         */
+        function hiddenHandler() {
+            primaryButton.unbind('click');
+            pinInput.unbind('keypress');
+            pinInput.val('');
+        }
+
+        function pinHandler() {
+            var loginModalBody = loginModal.find('.modal-body');
+
+            var pin = pinInput.val();
+            if (!pin) {
+                ui.errorReport(['Не задан PIN-код'], loginModalBody);
+                return;
+            }
+
+            var device = ui.crypto.devices[selectedDeviceID];
+            device.login(pin, resultCallback, errorCallback);
+
+            function resultCallback() {
+                loginModal.modal('hide');
+                ui.infoReport(['PIN-код успешно введен'])
+            }
+
+            function errorCallback(errorCode) {
+                ui.errorCallback(errorCode, loginModalBody)
+            }
+        }
+
+
+    },
+
+
+    /**
+     * вывод информационного сообщения
+     * @param messages - массив строк с сообщениями
+     * @param contentBox - контейнер в который нужно выводить инфомрацию. Если не задан, будет использован атрибут contentBox объекта
+     */
+    infoReport: function(messages, contentBox) {
+        contentBox = contentBox || this.contentBox;
+        _report(contentBox, messages, 'info');
+    },
 
     /**
      * стандартный обработчик ошибки работы с ключом
-     * @param error_code - под ошибки. преобразуется в соответствующее сообщение с помощью констант плагина
+     * @param errorCode - код ошибки. преобразуется в соответствующее сообщение с помощью констант плагина
+     * @param contentBox - контейнер в который нужно выводить ошибку. Если не задан, будет использован атрибут contentBox объекта
      */
-    errorCallback: function(error_code) {
-        var errorMsg = this.crypto.errorDescription[error_code];
-        _report(this.content_box, [errorMsg], 'error')
+    errorCallback: function(errorCode, contentBox) {
+        var errorMsg = this.crypto.errorDescription[errorCode];
+        contentBox = contentBox || this.contentBox;
+
+        _report(contentBox, [errorMsg], 'error')
+    },
+
+    /**
+     * вывод сообщений об ошибках
+     * @param errors - массив строк с описанием ошибок
+     * @param contentBox - контейнер в который нужно выводить ошибку. Если не задан, будет использован атрибут contentBox объекта
+     */
+    errorReport: function(errors, contentBox) {
+        contentBox = contentBox || this.contentBox;
+        _report(contentBox, errors, 'error');
     }
 
 };
 
 /**
- * служебная функция для вывод сообщений об ошибке. ее не следует использваоть на прямую.
+ * Служебная функция для вывода сообщений об ошибке. Ее не следует использваоть напрямую.
  * Вместо этого нужно вызывать методы CryptoUI.errorCallback и прочие.
  * @param container - элемент интерфейса, в начало которого будет добалвено сообщение об ошибке
  * @param messages - список сообщений

@@ -11,6 +11,7 @@ function CryptoDevice(id, crypto, initResultCallback, initErrorCallback) {
     this.crypto = crypto;
     this.label = null;
     this.model = null;
+    this.type = null;
     this.keys = null;
     this.certificates = {'user': null, 'ca': null, 'other': null};
 
@@ -19,7 +20,7 @@ function CryptoDevice(id, crypto, initResultCallback, initErrorCallback) {
 CryptoDevice.prototype = {
 
     /**
-     * метод проверят окночена ли стартовая инициализация
+     * метод проверят окончена ли стартовая инициализация объекта
      */
     is_inited: function() {
         var inited = true;
@@ -27,6 +28,7 @@ CryptoDevice.prototype = {
         // если одно из стартовых свойств еще не прогружено, снимем флаг
         if (!this.label) inited = false;
         if (!this.model) inited = false;
+        if (!this.type) inited = false;
         if (!this.certificates['user']) inited = false;
         if (!this.certificates['ca']) inited = false;
         if (!this.certificates['other']) inited = false;
@@ -44,6 +46,7 @@ CryptoDevice.prototype = {
         this.crypto.pluginObject.getDeviceLabel(
             device.id,
             function(label) {
+                if (label == "Rutoken ECP <no label>") label = "Rutoken ECP #" + device.id;
                 device.label = label;
                 checkReady();
             },
@@ -55,6 +58,33 @@ CryptoDevice.prototype = {
             device.id,
             function(model) {
                 device.model = model;
+                checkReady();
+            },
+            errorCallback
+        );
+
+        // тип
+        this.crypto.pluginObject.getDeviceType(
+            device.id,
+            function(type) {
+                switch (type)
+                {
+                    case device.crypto.pluginObject['TOKEN_TYPE_UNKNOWN']:
+                        device.type = "Неизвестное устройство";
+                        break;
+                    case device.crypto.pluginObject['TOKEN_TYPE_RUTOKEN_ECP']:
+                        device.type = "Рутокен ЭЦП";
+                        break;
+                    case device.crypto.pluginObject['TOKEN_TYPE_RUTOKEN_WEB']:
+                        device.type = "Рутокен Web";
+                        break;
+                    case device.crypto.pluginObject['TOKEN_TYPE_RUTOKEN_PINPAD_IN']:
+                        device.type = "Рутокен PINPad";
+                        break;
+                    default:
+                        device.type = "Невозможно определить тип устройства";
+                }
+
                 checkReady();
             },
             errorCallback
@@ -101,6 +131,20 @@ CryptoDevice.prototype = {
         }
     },
 
+    /**
+     * вход на устройство
+     * @param pin
+     * @param resultCallback
+     * @param errorCallback
+     */
+    login: function(pin, resultCallback, errorCallback) {
+        this.crypto.pluginObject.login(
+            this.id,
+            pin,
+            resultCallback,
+            errorCallback
+        )
+    },
 
     /**
      * TODO: набросок работы с ключами
@@ -116,5 +160,13 @@ CryptoDevice.prototype = {
             },
             errorCallback
         );
+    },
+
+    /**
+     * формирует развернутое описание устройства
+     * @returns {string}
+     */
+    getExpandLabel: function() {
+        return this.label + ' ('+ this.type +')';
     }
 };
