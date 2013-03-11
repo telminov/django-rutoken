@@ -38,7 +38,9 @@ class Login(forms.Form):
 
     class Media:
         js = (
-            '%s/rutoken/js/crypto_plugin.js' % settings.STATIC_URL,
+            '%s/rutoken/js/crypto/plugin.js' % settings.STATIC_URL,
+            '%s/rutoken/js/crypto/device.js' % settings.STATIC_URL,
+            '%s/rutoken/js/crypto/ui.js' % settings.STATIC_URL,
             '%s/rutoken/js/login.js' % settings.STATIC_URL,
         )
 
