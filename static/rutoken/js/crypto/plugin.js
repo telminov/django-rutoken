@@ -4,10 +4,11 @@
  */
 function CryptoPlugin() {
     this.pluginObject = document.getElementById("plugin-object");
-    this.init();
+    this._set_constants();
 }
 CryptoPlugin.prototype = {
     pluginObject: null,
+    devices: [],
     errorCodes: null,
     errorDescription: [],
 
@@ -15,7 +16,11 @@ CryptoPlugin.prototype = {
         return this.pluginObject && this.pluginObject.valid
     },
 
-    init: function() {
+    /**
+     * служебный метод для установки констант плагина
+     * @private
+     */
+    _set_constants: function() {
         this.errorCodes = this.pluginObject.errorCodes;
         this.errorDescription[this.errorCodes.UNKNOWN_ERROR] = "Неизвестная ошибка";
         this.errorDescription[this.errorCodes.BAD_PARAMS] = "Неправильные параметры";
@@ -44,12 +49,12 @@ CryptoPlugin.prototype = {
 
     /**
      * функция опрашивает инфомрацию о доступных устройствах
-     * @param resultCallback функция обратного вызова, в которую передается отсортированный список идентификаторов устроуйств и словарь с устройствами (ключ - идентификатор).
+     * @param resultCallback функция обратного вызова, в которую передается устроуйств.
      * @param errorCallback
      */
     refreshDevicesInfo: function(resultCallback, errorCallback) {
-        var crypto = this;
-        crypto.devices = {};
+        var plugin = this;
+        var devicesHash = {};
 
         // запросим списк устройств
         this.pluginObject.enumerateDevices(
@@ -60,8 +65,14 @@ CryptoPlugin.prototype = {
         // функция вызывает загрузку объектов устройств
         function enumerateCallback(deviceIDs) {
             $.each(deviceIDs, function (i, deviceID) {
-                device = new CryptoDevice(deviceID, crypto, checkAllDevicesReady, errorCallback);
-                crypto.devices[deviceID] = device;
+                // создадим устройство, при этом будет запущена подгрузка данных по нему
+                device = new CryptoDevice({
+                    id: deviceID,
+                    plugin: plugin,
+                    initResultCallback: checkAllDevicesReady,
+                    initErrorCallback: errorCallback
+                });
+                devicesHash[deviceID] = device;
             })
         }
 
@@ -73,36 +84,26 @@ CryptoPlugin.prototype = {
         function checkAllDevicesReady() {
             var allReady = true;
 
-            $.each(crypto.devices, function (i, device) {
+            // сбросим флаг если хоть одно из устройств еще не прогрузилось
+            $.each(devicesHash, function (i, device) {
                 if (!device.is_inited()) allReady = false;
             });
 
-            if (allReady)
-                resultCallback(
-                    crypto.getDeviceIDs(),
-                    crypto.devices
-                );
-        }
-    },
 
-    /**
-     * @returns {Array} - сортированный список устройств
-     */
-    getDeviceIDs: function() {
-        if (!this.devices)
-            throw "Нет информации об устройствах. Возможно следует сначала вызывать метод refreshDevicesInfo.";
+            if (allReady) {
+                // упорядочим устройства по ID
+                var devices = [];
+                for (k in devicesHash) {
+                    if (devicesHash.hasOwnProperty(k)) {
+                        devices.push(devicesHash[k]);
+                    }
+                }
+                plugin.devices = devices.sort(function(a,b){ return Number(a.id) - Number(b.id) })
 
-        var deviceIDs = [];
-        // сформируем массив идентификаторов
-        for (k in this.devices) {
-            if (this.devices.hasOwnProperty(k)) {
-                deviceIDs.push(Number(k));
+                // обработчик окончания обновления списка устройств
+                resultCallback(plugin.devices)
             }
         }
-        // отсортируем его
-        deviceIDs = deviceIDs.sort(function(a,b){ return Number(a)-Number(b) });
-
-        return deviceIDs;
     }
 };
 

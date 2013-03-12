@@ -1,17 +1,16 @@
 $(function(){
     var devicesSelect = $('#id_devices');
-    var keysSelect = $('#id_keys');
     var certsSelect = $('#id_certs');
     var pinBtn = $('#id_pin');
     var submitBtn = $('form button[type=submit]');
 
     var crypto_ui = new CryptoUI({
         contentBox: '.box-container-toggle',
-        devicesSelect: devicesSelect
+        devicesSelect: devicesSelect,
+        certsSelect: certsSelect
     });
 
     // заблокируем до времени не нужные элементы формы
-    keysSelect.attr('disabled', 'disabled');
     certsSelect.attr('disabled', 'disabled');
     pinBtn.attr('disabled', 'disabled');
     submitBtn.attr('disabled', 'disabled');
@@ -35,6 +34,7 @@ $(function(){
         if (!selectedDeviceID) return;  // если не оказалось устройств
 
         pinBtn.removeAttr('disabled');
+        certsSelect.removeAttr('disabled');
         pinBtn.focus();
     }
 

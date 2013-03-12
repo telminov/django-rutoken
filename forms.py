@@ -24,7 +24,6 @@ class Login(forms.Form):
 
     # поля, нужные js-логике
     devices = forms.ChoiceField(label=u'Доступные устройства', choices=[])
-    keys = forms.ChoiceField(label=u'Ключи на устройстве', choices=[])
     certs = forms.ChoiceField(label=u'Сертификаты на устройстве', choices=[])
 
 
@@ -40,6 +39,7 @@ class Login(forms.Form):
         js = (
             '%s/rutoken/js/crypto/plugin.js' % settings.STATIC_URL,
             '%s/rutoken/js/crypto/device.js' % settings.STATIC_URL,
+            '%s/rutoken/js/crypto/cert.js' % settings.STATIC_URL,
             '%s/rutoken/js/crypto/ui.js' % settings.STATIC_URL,
             '%s/rutoken/js/login.js' % settings.STATIC_URL,
         )

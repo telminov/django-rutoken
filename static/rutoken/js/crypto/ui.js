@@ -2,20 +2,24 @@
  * Хелпер по работе с токеном в интерфейсе
  * @param param - параметры объекта:
  *      contentBox - css-селектор контейнера с контентом, который должен реагировать на взаимодействие с ключом
- *      devicesSelect - css-селектор списка устройств
- *      crypto - объект CryptoPlugin (необязательный)
+ *      devicesSelect - css-селектор списка устройств (обязательный для работы метода refreshDevices без параметров. в противном случае можно не указывать)
+ *      certsSelect - css-селектор списка сертификатов (необязательный)
+ *      keysSelect - css-селектор списка ключей (необязательный)
+ *      plugin - объект CryptoPlugin (необязательный)
  * @constructor
  */
 function CryptoUI(param) {
     // обязательные параметры
-    if (!param.contentBox) throw 'Не задан параметр contentBox"';
+    if (!param.contentBox) throw 'Not set parameter "contentBox"';
 
     this.contentBox = $(param.contentBox);
     this.devicesSelect = $(param.devicesSelect);
-    this.crypto = param.crypto || new CryptoPlugin();
+    this.certsSelect = $(param.certsSelect);
+    this.keysSelect = $(param.keysSelect);
+    this.plugin = param.plugin || new CryptoPlugin();
 
     // проверка валидности плагина
-    if (!this.crypto.is_valid())
+    if (!this.plugin.is_valid())
         this.report(["Ошибка создания объекта работы с ключом"], "error");
 }
 
@@ -25,16 +29,17 @@ CryptoUI.prototype = {
      * Обновляет список устройств.
      * @param resultCallback - обработчик окончания обновления списка устройств
      */
-    refreshDevices: function(resultCallback) {
+    refreshDevices: function(resultCallback, devicesSelect) {
         var ui = this;
-        if (!ui.devicesSelect) throw 'Не задан параметр "devicesSelect"';
+        devicesSelect = devicesSelect || ui.devicesSelect;
+        if (!devicesSelect) throw 'Not set parameter "devicesSelect"';
 
         // обнулим текущий список
-        ui.devicesSelect.find('option').remove();
-        ui.devicesSelect.append('<option>Список обновляется...</option>');
+        devicesSelect.find('option').remove();
+        devicesSelect.append('<option>Список обновляется...</option>');
 
         // запустим обновлений списка устройств
-        this.crypto.refreshDevicesInfo(
+        this.plugin.refreshDevicesInfo(
             refreshCallback,
             errorCallback
         );
@@ -43,17 +48,25 @@ CryptoUI.prototype = {
          * по результатам обновления инфы об устроствах
          * отрисуем список устройств
          */
-        function refreshCallback(deviceIDs, devices) {
-            ui.devicesSelect.find('option').remove();
-
-            $.each(deviceIDs, function(i, deviceID){
-                var device = devices[deviceID];
+        function refreshCallback(devices) {
+            // обновим список устройств
+            devicesSelect.find('option').remove();
+            $.each(devices, function(i, device){
                 var option_html = '<option value="'+ device.id +'">'+ device.getExpandLabel() +'</option>';
-                ui.devicesSelect.append(option_html);
+                devicesSelect.append(option_html);
+            });
 
-                if (resultCallback)
-                    resultCallback();
-            })
+            // обновим список сертификатов, если задан селектор сертификатов и обнаружены устройства
+            if (ui.certsSelect.length && devices.length) {
+                ui.certsSelect.find('option').remove();
+                $.each(devices[0].getAllCerts(), function(i, cert) {
+                    var option_html = '<option value="'+ cert.id +'">'+ cert.getLabel() +'</option>';
+                    ui.certsSelect.append(option_html);
+                })
+            }
+
+            if (resultCallback)
+                resultCallback();
         }
 
         function errorCallback (errorCode) {
@@ -64,10 +77,12 @@ CryptoUI.prototype = {
     /**
      * логин на устройстве
      * @param loginModal - селектор модального bootstrap-окна (http://twitter.github.com/bootstrap/javascript.html#modals)
+     * @param devicesSelect - css-селектор списка устройств, если не задан, то будет использован атрибу devicesSelect объекта
      */
-    login: function(loginModal) {
+    login: function(loginModal, devicesSelect) {
         var ui = this;
-        var selectedDeviceID = this.devicesSelect.val();
+        devicesSelect = devicesSelect || ui.devicesSelect;
+        var selectedDeviceID = devicesSelect.val();
 
         if (!selectedDeviceID) {
             this.errorReport(["Не выбрано устройство"]);
@@ -115,7 +130,7 @@ CryptoUI.prototype = {
                 return;
             }
 
-            var device = ui.crypto.devices[selectedDeviceID];
+            var device = ui.plugin.devices[selectedDeviceID];
             device.login(pin, resultCallback, errorCallback);
 
             function resultCallback() {
@@ -142,17 +157,6 @@ CryptoUI.prototype = {
         _report(contentBox, messages, 'info');
     },
 
-    /**
-     * стандартный обработчик ошибки работы с ключом
-     * @param errorCode - код ошибки. преобразуется в соответствующее сообщение с помощью констант плагина
-     * @param contentBox - контейнер в который нужно выводить ошибку. Если не задан, будет использован атрибут contentBox объекта
-     */
-    errorCallback: function(errorCode, contentBox) {
-        var errorMsg = this.crypto.errorDescription[errorCode];
-        contentBox = contentBox || this.contentBox;
-
-        _report(contentBox, [errorMsg], 'error')
-    },
 
     /**
      * вывод сообщений об ошибках
@@ -162,8 +166,19 @@ CryptoUI.prototype = {
     errorReport: function(errors, contentBox) {
         contentBox = contentBox || this.contentBox;
         _report(contentBox, errors, 'error');
-    }
+    },
 
+    /**
+     * стандартный обработчик ошибки работы с ключом
+     * @param errorCode - код ошибки. преобразуется в соответствующее сообщение с помощью констант плагина
+     * @param contentBox - контейнер в который нужно выводить ошибку. Если не задан, будет использован атрибут contentBox объекта
+     */
+    errorCallback: function(errorCode, contentBox) {
+        var errorMsg = this.plugin.errorDescription[errorCode];
+        contentBox = contentBox || this.contentBox;
+
+        _report(contentBox, [errorMsg], 'error')
+    }
 };
 
 /**
