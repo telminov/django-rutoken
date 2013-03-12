@@ -16,14 +16,34 @@ $(function(){
     submitBtn.attr('disabled', 'disabled');
 
     // модальное окно для ввода pin-кода
-    pinBtn.click(function(){
-        var loginModal = $('#loginPINModal');
-        crypto_ui.login(loginModal);
-    });
+    pinBtn.click(openPINModal);
 
     crypto_ui.refreshDevices(deviceRefreshCallback);
 
 
+
+    /**
+     * окно ввода пин кода
+     */
+    function openPINModal(){
+        crypto_ui.login({
+            loginModal: $('#loginPINModal'),
+            pinSuccessCallback: pinSuccessCallback
+        });
+
+        /**
+         * после успешного ввода пина ломимся на сервер
+         */
+        function pinSuccessCallback(){
+            submitBtn.removeAttr('disabled', 'disabled');
+            submitBtn.click(function (event) {
+                event.preventDefault();
+                authToServer();
+            });
+
+            authToServer();
+        }
+    }
 
     /**
      * обработчик успешного окончания обновлнеия списка устройств
@@ -40,8 +60,27 @@ $(function(){
 
 
     /**
-     * логик на рутокен
+     * метод инициирует вход на сервер по выбранному в текущий момент сертификату
      */
+    function authToServer() {
+        var selectedDeviceID = devicesSelect.val();
+        var selectedCertID = certsSelect.val();
 
+        // если выбрано устройство и сертификат
+        if (selectedDeviceID && selectedCertID) {
+            var device = crypto_ui.plugin.getDeviceByID(selectedDeviceID);
+            var cert = device.getCertByID(selectedCertID);
+            var serverRandom = $('#server_random').text();
+
+            cert.genAuthToken(
+                serverRandom,
+                authCallback,
+                function(errorCode) {crypto_ui.errorCallback(errorCode)}
+            )
+        }
+
+        function authCallback(authToken) {
+            alert(authToken);
+        }
+    }
 });
-

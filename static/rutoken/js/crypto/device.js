@@ -11,7 +11,7 @@ function CryptoDevice(param) {
     this.id = param.id;
     this.plugin = param.plugin;
 
-    this.init(param.initResultCallback, param.initErrorCallback);
+    this._init(param.initResultCallback, param.initErrorCallback);
 }
 CryptoDevice.prototype = {
     id: null,
@@ -28,6 +28,7 @@ CryptoDevice.prototype = {
     is_inited: function() {
         var inited = true;
 
+
         // если одно из стартовых свойств еще не прогружено, снимем флаг
         if (!this.label) inited = false;
         if (!this.model) inited = false;
@@ -36,7 +37,7 @@ CryptoDevice.prototype = {
         if (!this.certs['ca']) inited = false;
         if (!this.certs['other']) inited = false;
         // проверим еще что все сертификаты инициализированны
-        $(this.getAllCerts(), function(i, cert) {
+        $.each(this.getAllCerts(), function(i, cert) {
             if (!cert.is_inited())
                 inited = false;
         });
@@ -48,7 +49,7 @@ CryptoDevice.prototype = {
     /**
      * метод инициализирует объект устройства
      */
-    init: function(resultCallback, errorCallback) {
+    _init: function(resultCallback, errorCallback) {
         var device = this;
 
         // label
@@ -161,6 +162,7 @@ CryptoDevice.prototype = {
         }
     },
 
+
     /**
      * вход на устройство
      * @param pin
@@ -213,6 +215,22 @@ CryptoDevice.prototype = {
                 certs.push(this.certs['other'][i]);
 
         return certs;
+    },
+
+    /**
+     * метод ищет среди сертификатов устройства сертификат с заданным ID. В случае необнаружения генерируем исключение.
+     * @param certID идентификатор запрашиваемого сертификата
+     * @returns сертификат
+     */
+    getCertByID: function(certID) {
+        // поищем среди всех сертификатов
+        var certs = this.getAllCerts();
+        for (var i=0; i < certs.length; i++) {
+            if (certs[i].id == certID)
+                return certs[i];
+        }
+
+        throw 'Certificate with ID "'+ certID +'" dose not exists on device with ID "'+ this.id +'"';
     },
 
     /**

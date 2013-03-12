@@ -76,12 +76,16 @@ CryptoUI.prototype = {
 
     /**
      * логин на устройстве
-     * @param loginModal - селектор модального bootstrap-окна (http://twitter.github.com/bootstrap/javascript.html#modals)
-     * @param devicesSelect - css-селектор списка устройств, если не задан, то будет использован атрибу devicesSelect объекта
+     * @param param параметры:
+     *      loginModal - селектор модального bootstrap-окна (http://twitter.github.com/bootstrap/javascript.html#modals)
+     *      devicesSelect - css-селектор списка устройств, если не задан, то будет использован атрибу devicesSelect объекта
+     *      pinSuccessCallback - обаботчик успешного ввода PIN-кода. Принимает объект устройства, на которое был осуществлен вход.
      */
-    login: function(loginModal, devicesSelect) {
+    login: function(param) {
         var ui = this;
-        devicesSelect = devicesSelect || ui.devicesSelect;
+
+        var loginModal = param.loginModal;
+        var devicesSelect = param.devicesSelect || ui.devicesSelect;
         var selectedDeviceID = devicesSelect.val();
 
         if (!selectedDeviceID) {
@@ -133,9 +137,17 @@ CryptoUI.prototype = {
             var device = ui.plugin.devices[selectedDeviceID];
             device.login(pin, resultCallback, errorCallback);
 
+
+            /**
+             * успешный логин на устройство
+             */
             function resultCallback() {
                 loginModal.modal('hide');
-                ui.infoReport(['PIN-код успешно введен'])
+                ui.infoReport(['PIN-код успешно введен']);
+
+                // вызовем обработчик успешного входа
+                if (param.pinSuccessCallback)
+                    param.pinSuccessCallback(device);
             }
 
             function errorCallback(errorCode) {

@@ -98,12 +98,30 @@ CryptoPlugin.prototype = {
                         devices.push(devicesHash[k]);
                     }
                 }
-                plugin.devices = devices.sort(function(a,b){ return Number(a.id) - Number(b.id) })
+                plugin.devices = devices.sort(function(a,b){ return Number(a.id) - Number(b.id) });
 
                 // обработчик окончания обновления списка устройств
                 resultCallback(plugin.devices)
             }
         }
+    },
+
+    /**
+     * метод ищет устройство с указанным ID среди обнаруженных
+     * @param deviceID идентификатор устройства
+     * @returns устройство
+     */
+    getDeviceByID: function(deviceID) {
+        if (!this.devices)
+            throw "No info about devises. Call refreshDevicesInfo method before.";
+
+        for (var i=0; i < this.devices.length; i++) {
+            if (this.devices[i].id == deviceID)
+                return this.devices[i];
+        }
+
+        throw 'Device with ID "'+ deviceID +'" dose not exists';
     }
+
 };
 

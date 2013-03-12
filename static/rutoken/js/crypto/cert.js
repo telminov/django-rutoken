@@ -15,7 +15,7 @@ function CryptoCert(param) {
     this.category = param.category;
     this.plugin = param.plugin;
 
-    this.init(param.initResultCallback, param.initErrorCallback);
+    this._init(param.initResultCallback, param.initErrorCallback);
 }
 CryptoCert.prototype = {
     id: null,
@@ -51,11 +51,10 @@ CryptoCert.prototype = {
         return inited;
     },
 
-
     /**
      * метод инициализирует объект устройства
      */
-    init: function(resultCallback, errorCallback) {
+    _init: function(resultCallback, errorCallback) {
         var cert = this;
 
         // запросим распарсенную инфу о сертификате
@@ -103,7 +102,25 @@ CryptoCert.prototype = {
         var categoryName = this.categoryNames[this.category];
         var commonName = this.subject.commonName;
         var emailAddress = this.subject.emailAddress;
-        return  commonName +': '+ emailAddress +' ('+ categoryName +') ';
-    }
 
+        return  commonName +': '+ emailAddress +' ('+ categoryName +') ';
+    },
+
+
+    /**
+     * Метод формирует аутентификационную строку:
+     * к данным переданным в salt добавляет свои случайные данные и подписывает с помощью ключа сертификата
+     * @param salt - данные, которые будут включены в подписываемую строку
+     * @param resultCallback - обработчик результата подписи. Принимаем строку подписи в формает PEM
+     * @param errorCallback - обработчик ошибок
+     */
+    genAuthToken: function(salt, resultCallback, errorCallback) {
+        this.plugin.pluginObject.authenticate(
+            this.deviceID,
+            this.id,
+            salt,
+            resultCallback,
+            errorCallback
+        )
+    }
 };
