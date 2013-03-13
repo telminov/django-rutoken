@@ -151,7 +151,8 @@ CryptoUI.prototype = {
             }
 
             function errorCallback(errorCode) {
-                ui.errorCallback(errorCode, loginModalBody)
+                ui.errorCallback(errorCode, loginModalBody);
+                pinInput.select();
             }
         }
 

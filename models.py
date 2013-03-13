@@ -41,7 +41,7 @@ class Certificate(models.Model):
     user = models.ForeignKey(AuthUser, verbose_name=u'Пользователь', null=True, related_name='certificates', help_text=u'Пользователь с которым может быть связан сертификат')
 
     info = models.TextField(verbose_name=u'Информация')
-    pem = models.TextField(verbose_name=u'PEM', help_text=u'Текст сертификата в формате PEM',)
+    pem = models.FileField(upload_to='rutoken/certs', verbose_name=u'PEM', help_text=u'Файл сертификата в формате PEM',)
 
     dc = models.DateTimeField(auto_now_add=True, verbose_name=u'Дата/время создания')
     dm = models.DateTimeField(auto_now=True, verbose_name=u'Дата/время последней модификации')

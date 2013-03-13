@@ -4,9 +4,12 @@ from random import randint
 from django import forms
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth import authenticate
 
 from rutoken import models
-from rutoken.openssl import authenticate
+from rutoken.openssl import OpensslVerifyException
+from rutoken.auth_backend import AuthException
+
 
 # название атрибута в которое сохранится рандомная серверная часть
 SERVER_RANDOM = 'server_auth_random'
@@ -23,13 +26,12 @@ class Login(forms.Form):
     )
 
     # поля, нужные js-логике
-    devices = forms.ChoiceField(label=u'Доступные устройства', choices=[])
-    certs = forms.ChoiceField(label=u'Сертификаты на устройстве', choices=[])
+    devices = forms.ChoiceField(label=u'Доступные устройства', choices=[], required=False)
+    certs = forms.ChoiceField(label=u'Сертификаты на устройстве', choices=[], required=False)
 
 
     error_messages = {
-        'invalid_login': _("Please enter a correct username and password. "
-                           "Note that both fields are case-sensitive."),
+        'invalid_login': u"Ошибка аутентификации.",
         'no_cookies': _("Your Web browser doesn't appear to have cookies "
                         "enabled. Cookies are required for logging in."),
         'inactive': _("This account is inactive."),
@@ -37,10 +39,10 @@ class Login(forms.Form):
 
     class Media:
         js = (
+            '%s/rutoken/js/crypto/ui.js' % settings.STATIC_URL,
             '%s/rutoken/js/crypto/plugin.js' % settings.STATIC_URL,
             '%s/rutoken/js/crypto/device.js' % settings.STATIC_URL,
             '%s/rutoken/js/crypto/cert.js' % settings.STATIC_URL,
-            '%s/rutoken/js/crypto/ui.js' % settings.STATIC_URL,
             '%s/rutoken/js/login.js' % settings.STATIC_URL,
         )
 
@@ -55,29 +57,37 @@ class Login(forms.Form):
         self.user_cache = None
         super(Login, self).__init__(*args, **kwargs)
 
+
     def clean(self):
-        serial_number = self.cleaned_data.get('serial_number')
-        auth_sign = self.cleaned_data.get('auth_sign')
+        try:
+            serial_number = self.cleaned_data.get('serial_number')
+            auth_sign = self.cleaned_data.get('auth_sign')
 
-        if serial_number and auth_sign:
-            server_random = self.request.session.get(SERVER_RANDOM)
-            self.user_cache = authenticate(serial_number, server_random, auth_sign)
+            if serial_number and auth_sign:
+                server_random = self.request.session.get(SERVER_RANDOM)
+                self.user_cache = authenticate(cert_serial_number=serial_number, server_random=server_random, auth_sign=auth_sign)
 
-            if self.user_cache is None:
-                raise forms.ValidationError(
-                    self.error_messages['invalid_login'])
-            elif not self.user_cache.is_active:
-                raise forms.ValidationError(self.error_messages['inactive'])
-        self.check_for_test_cookie()
+                if self.user_cache is None:
+                    raise forms.ValidationError(self.error_messages['invalid_login'])
+                elif not self.user_cache.is_active:
+                    raise forms.ValidationError(self.error_messages['inactive'])
+            self.check_for_test_cookie()
+
+        except OpensslVerifyException, ex:
+            raise forms.ValidationError(u"Ошибка верификации аутентификационной строки (%s)" % ex)
+        except AuthException, ex:
+            raise forms.ValidationError(u"Ошибка аутентификации: %s" % ex)
+
         return self.cleaned_data
 
-    def set_server_random(self):
+    def gen_server_auth_random(self):
         """
-            устанавливает рандомную часть аутентификационной строки в ссессию пользвоателя
+            Генерирует рандомную строку для аутентификации и сажает ее в сессию пользователя.
+            Сгенерированная строка доступна через атрибут формы server_auth_random.
+            Рандомная часть должна быть выведена в страницу аутентификации для генерации аутентифкационного токена на клиенте.
         """
-        server_random = randint(1000000000, 9999999999)
-        self.request.session[SERVER_RANDOM] = server_random
-        return server_random
+        self.server_auth_random = str(randint(1000000000, 9999999999))
+        self.request.session[SERVER_RANDOM] = self.server_auth_random
 
     def check_for_test_cookie(self):
         if self.request and not self.request.session.test_cookie_worked():

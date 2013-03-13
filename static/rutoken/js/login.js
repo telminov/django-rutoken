@@ -31,17 +31,22 @@ $(function(){
             pinSuccessCallback: pinSuccessCallback
         });
 
-        /**
-         * после успешного ввода пина ломимся на сервер
-         */
+
         function pinSuccessCallback(){
-            submitBtn.removeAttr('disabled', 'disabled');
+            // заблокируем ввод пина чтобы не отвлекать пользователя
+            pinBtn.attr('disabled', 'disabled');
+
+            // вешаем обработчик аутентификции на сервере
+            submitBtn.removeAttr('disabled');
             submitBtn.click(function (event) {
                 event.preventDefault();
                 authToServer();
             });
+            submitBtn.focus();
 
-            authToServer();
+            // если доступен только один сертификат, с ним сразу ломимся на сервер
+            if (certsSelect.find('option').length == 1)
+                authToServer();
         }
     }
 
@@ -65,6 +70,9 @@ $(function(){
     function authToServer() {
         var selectedDeviceID = devicesSelect.val();
         var selectedCertID = certsSelect.val();
+        submitBtn.attr('disabled', 'disabled');
+
+        crypto_ui.infoReport(['Запрос на сервер аутентификации...']);
 
         // если выбрано устройство и сертификат
         if (selectedDeviceID && selectedCertID) {
@@ -72,15 +80,80 @@ $(function(){
             var cert = device.getCertByID(selectedCertID);
             var serverRandom = $('#server_random').text();
 
+            // сгенерируем на рутокене аутентификационную строку
             cert.genAuthToken(
                 serverRandom,
-                authCallback,
+                genAuthTokenCallback,
                 function(errorCode) {crypto_ui.errorCallback(errorCode)}
             )
+
+        } else {
+            crypto_ui.errorReport(['Не указан сертификат'])
         }
 
-        function authCallback(authToken) {
-            alert(authToken);
+
+        /**
+         * С полученной аутентификационной строкой пойдем на сервер
+         * @param authToken аутентификационная строка
+         */
+        function genAuthTokenCallback(authToken) {
+            // просим сервер аутентифицировать нас
+            $.ajax({
+                type: "POST",
+                data: {
+                    csrfmiddlewaretoken: $('input[type=hidden][name=csrfmiddlewaretoken]').val(),
+                    serial_number: cert.serialNumber,
+                    auth_sign: authToken
+                },
+                success: successHandler,
+                error: errorHandler
+            });
+
+
+            /**
+             * обработка ответа сервера на запрос аутентификации
+             * @param data
+             * @param textStatus
+             * @param jqXHR
+             */
+            function successHandler(data, textStatus, jqXHR) {
+                // проверим не вернул ли сервер сообщения об ишибках
+                var errors = [];
+                $(data).find('.alert-error .errorlist li').each(function(){
+                    errors.push($(this).text());
+                });
+
+                // если нашлись ошибки выведем их
+                if (errors.length) {
+                    crypto_ui.errorReport(errors);
+
+                    // обновим серверную часть аутентификационной строки
+                    $('#server_random').text($(data).find('#server_random').text());
+                } else {
+                    // если ошибок нет, попытаемся средиректить на главную
+                    window.location = '/';  // TODO: прикрутить парсинг параметра next
+                }
+
+                submitBtn.removeAttr('disabled');
+            }
+
+            /**
+             * обработка ошибки ajax-запроса на сервер в попытке авторизоваться
+             * @param jqXHR
+             * @param textStatus
+             * @param errorThrown
+             */
+            function errorHandler(jqXHR, textStatus, errorThrown) {
+                // если есть jqXHR.status, значит сервер хоть что-то ответил. В противном случае похоже на отстутствие связи web-сервером
+                var error;
+                if (jqXHR.status)
+                    error = 'Ошибка сервера аутентификации ('+ jqXHR.status +' - '+ errorThrown +')';
+                else
+                    error = 'Сервер не отвечает';
+                crypto_ui.errorReport([error]);
+
+                submitBtn.removeAttr('disabled');
+            }
         }
     }
 });
