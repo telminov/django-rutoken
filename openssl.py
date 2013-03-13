@@ -8,20 +8,31 @@ from rutoken import models
 from django.conf import settings
 
 
+class OpensslCreateCertException(Exception): pass
 class OpensslVerifyException(Exception): pass
 
-
-
-
-def verify(auth_sign, user_cert_path):
+def create_cert(request_path):
     """
-        Обертка для команды openssl cms -verify.
+        Обрабатывает запрос на сертификат.
+        Принимает путь к файл запроса в формате PEM.
+        Возвращает путь к созданному сертификату.
+        Возбуждает исключение OpensslCreateCertException в случае ошибки формирования сертификата.
+    """
+    #TODO: реализовать
+    return ''
+
+
+def verify_auth(cert_path, auth_sign):
+    """
+        Проверяет корректность аутентификационной строки с использованием указанного сертификата.
+        С помощью функции можно установить что подпись была сформирована с испольхованием заданного сертификата.
+        (Обертка для команды openssl cms -verify.)
 
         Параметры:
+            cert_path - путь к файлу сертификата, с использование которого будет расшифрована аутентификационная строка
             auth_sign - аутентификационная строка
-            user_cert_path - путь к файлу пользователя сертификата
 
-        Возвращает результат рашивровки сообщения.
+        Возвращает результат расшифровки сообщения.
         Возбуждает исключение OpensslVerifyException в случае ошибки верификации.
     """
 
@@ -40,12 +51,12 @@ def verify(auth_sign, user_cert_path):
     auth_result_path = tempfile.mktemp(dir=tmpdir, prefix='auth_result_', suffix='.txt')
 
     # выполним верификацию
-    cmd = 'cd %(pki_ca)s; %(openssl)s cms -engine gost -verify -in %(auth_sign_path)s -inform PEM -CAfile cacert.pem -out %(auth_result_path)s -nointern -certfile %(user_cert_path)s' % {
+    cmd = 'cd %(pki_ca)s; %(openssl)s cms -engine gost -verify -in %(auth_sign_path)s -inform PEM -CAfile cacert.pem -out %(auth_result_path)s -nointern -certfile %(cert_path)s' % {
         'pki_ca': settings.PKI_CA_PATH,
         'openssl': settings.OPENSSL_BIN_PATH,
         'auth_sign_path': auth_sign_path,
         'auth_result_path': auth_result_path,
-        'user_cert_path': user_cert_path,
+        'cert_path': cert_path,
     }
     status, output = commands.getstatusoutput(cmd)
     if status:  # если статус не 0 генерим ошибку
@@ -61,3 +72,22 @@ def verify(auth_sign, user_cert_path):
     shutil.rmtree(tmpdir)
 
     return auth_result
+
+
+def verify_sign(cert_path, sign, data):
+    """
+        Метод проверяет что результат расшифровки подписи sign с использованием сертификата cert_path дает данные data
+
+        Параметры:
+            cert_path - путь к файлу сертификата, с использование которого будет проводится расшифровка
+            sign - подпись, содержащая подписанные данные
+            data - данные, которые нужно сравнить с содержимым подписи
+
+        Вовращает результат проверки:
+            True - подпись корректно
+            False - результат не совпал
+
+        Возбуждает исключение OpensslVerifyException в случае ошибки верификации.
+    """
+    # TODO: реализовать метод
+    return True

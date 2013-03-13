@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="utf-8">
+        <title>Вход</title>
+
+        <link href="http://yandex.st/bootstrap/2.3.1/css/bootstrap.min.css" rel="stylesheet" id="main-theme-script">
+
+        <script src="http://yandex.st/jquery/1.7.2/jquery.js"></script>
+        <script src="http://yandex.st/bootstrap/2.3.1/js/bootstrap.min.js"></script>
+
+        {{ form.media }}
+    </head>
+
+    <body>
+        <h1>Вход</h1>
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-error">
+            <strong>Исправьте ошибки формы!</strong><br />
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <div class="box-content">
+            <form class="well form-search" method="POST">{% csrf_token %}
+
+                <div id="server_random" style="display: none">{{ form.server_auth_random }}</div>
+
+                {{ form.as_p }}
+
+                <button type="button" class="btn btn-success" id="id_pin" data-toggle="modal">PIN-код</button>
+                <button type="submit" class="btn btn-primary offset1">Войти</button>
+            </form>
+
+            <object type="application/x-rutoken-pki" id="plugin-object" width="0" height="0"></object>
+
+
+            <!-- login PIN modal -->
+            <div id="loginPINModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="PIN-код" aria-hidden="true">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    <h3 id="loginPINModalHead"></h3>
+                </div>
+                <div class="modal-body">
+                    <p class="row-flow">
+                        <label for="id_PIN_input" class="span2">PIN-код</label>
+                        <input type="password" id="id_PIN_input" class="span5"/>
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+                    <button class="btn btn-primary">Войти</button>
+                </div>
+            </div>
+            <!-- /login PIN modal -->
+
+        </div>
+</body>

@@ -21,7 +21,7 @@ class AuthBackend(ModelBackend):
         cert = models.Certificate.objects.get(serial_number=cert_serial_number, user__isnull=False, dd__isnull=True)
 
         # расшифруем уатентификационную строку
-        auth_result = openssl.verify(auth_sign, cert.pem.path)
+        auth_result = openssl.verify_auth(cert.pem.path, auth_sign)
 
         # если начало аутентификационной строки не совпадает со строкой сгенерированной на сервере,
         # то считаем пользователя не прошедшим аутентификацию
