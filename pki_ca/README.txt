@@ -10,7 +10,7 @@
         После установки на мак свежей версии с сайта http://www.openssl.org/source/ подпись сертификатов заработала корректно.
         "OpenSSL 1.0.1e 11 Feb 2013"
 
-        Так же успешно работает версия под убунтой 12.04
+        Так же успешно работает дефолтная версия под убунтой 12.04
         "OpenSSL 1.0.1 14 Mar 2012"
 
 
@@ -81,5 +81,5 @@
                 1GbTFeDrrUMo3sav+FS4CooxV/0O707LAorLydBw5nc=
                 -----END CERTIFICATE REQUEST-----
 
-
-
+            подпись
+                openssl ca -config openssl.cnf -in working/request -out working/newcert.pem -engine gost
