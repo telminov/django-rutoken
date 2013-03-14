@@ -109,8 +109,22 @@ class CertificateRequest(forms.ModelForm):
 
     class Media:
         js = (
+            'http://yandex.st/jquery/1.7.2/jquery.js',
+            '%s/rutoken/js/crypto/ui.js' % settings.STATIC_URL,
+            '%s/rutoken/js/crypto/plugin.js' % settings.STATIC_URL,
+            '%s/rutoken/js/crypto/device.js' % settings.STATIC_URL,
+            '%s/rutoken/js/crypto/cert.js' % settings.STATIC_URL,
             '%s/rutoken/js/certificate_request.js' % settings.STATIC_URL,
         )
+        css = {
+            'main': ('http://yandex.st/bootstrap/2.3.1/js/bootstrap.min.js', )
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(CertificateRequest, self).__init__(*args, **kwargs)
+
+        # селекторы для js-кода формы
+        self.fields['pem_text'].widget.attrs['class'] = 'pem_text'
 
 
 class Certificate(forms.ModelForm):

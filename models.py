@@ -13,7 +13,7 @@ class CertificateRequest(models.Model):
     locality = models.CharField(max_length=100, verbose_name=u'Город', default='Moscow', help_text=u'Город или населенный пункт')
     org_name = models.CharField(max_length=255, verbose_name=u'Организация', help_text=u'Название организации в латинском эквиваленте')
     org_unit = models.CharField(max_length=255, verbose_name=u'Подразделение', blank=True, help_text=u'Название подразделения оргнанизации')
-    common_name = models.CharField(max_length=255, verbose_name=u'Общее имя', unique=True, help_text=u'ФИО, логин или полностью определенное (FQDN) доменное имя')
+    common_name = models.CharField(max_length=255, verbose_name=u'Общее имя', help_text=u'ФИО, логин или полностью определенное (FQDN) доменное имя')
     surname = models.CharField(max_length=255, verbose_name=u'Фамилия', blank=True)
     given_name = models.CharField(max_length=255, verbose_name=u'Имя', blank=True)
     email = models.CharField(max_length=255, verbose_name=u'e-mail', blank=True)
@@ -24,12 +24,20 @@ class CertificateRequest(models.Model):
     snils = models.CharField(max_length=12, verbose_name=u'СНИЛС', blank=True)
     ogrn = models.CharField(max_length=12, verbose_name=u'ОГРН', blank=True)
 
-    pem = models.TextField(verbose_name=u'PEM', help_text=u'Текст запроса в формате PEM',)
+    pem_text = models.TextField(verbose_name=u'Тело запроса', help_text=u'Текст запроса в формате PEM',)
+    pem_file = models.FileField(upload_to='rutoken/request_certs', verbose_name=u'PEM', help_text=u'Файл завроса в формате PEM', editable=False, null=True)
 
     dc = models.DateTimeField(auto_now_add=True, verbose_name=u'Дата/время создания')
     dm = models.DateTimeField(auto_now=True, verbose_name=u'Дата/время последней модификации')
-    dd = models.DateTimeField(null=True, verbose_name=u'Дата/время удаления', blank=True)
+    dd = models.DateTimeField(null=True, verbose_name=u'Дата/время удаления', blank=True, editable=False)
 
+    class Meta:
+        verbose_name = u'Запрос на сертификат'
+        verbose_name_plural = u'Запросы на сертификат'
+        ordering = ('-dc', )
+
+    def __unicode__(self):
+        return u'%s от %s' % (self.common_name, self.dc.date())
 
 class Certificate(models.Model):
     """

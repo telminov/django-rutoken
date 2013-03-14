@@ -1,9 +1,20 @@
 /**
  * Обертка с дополнительными методами для манипулации с токеном
+ * @param createPluginObject - заставляет конструктор создавать объект плагина на странице если его нет
  * @constructor
  */
-function CryptoPlugin() {
+function CryptoPlugin(createPluginObject) {
     this.pluginObject = document.getElementById("plugin-object");
+
+    // если объекта плагина на странице нет, но задан параметр createPluginObject, то создадим его
+    if (!this.pluginObject)
+        if (createPluginObject) {
+            $('body').append('<object type="application/x-rutoken-pki" id="plugin-object" width="0" height="0"></object>');
+            this.pluginObject = document.getElementById("plugin-object");
+        } else
+            throw "Can't get crypto plugin object.";
+
+
     this._set_constants();
 }
 CryptoPlugin.prototype = {
@@ -52,7 +63,7 @@ CryptoPlugin.prototype = {
      * @param resultCallback функция обратного вызова, в которую передается устроуйств.
      * @param errorCallback
      */
-    refreshDevicesInfo: function(resultCallback, errorCallback) {
+    refreshDevices: function(resultCallback, errorCallback) {
         var plugin = this;
         var devicesHash = {};
 
@@ -64,16 +75,22 @@ CryptoPlugin.prototype = {
 
         // функция вызывает загрузку объектов устройств
         function enumerateCallback(deviceIDs) {
-            $.each(deviceIDs, function (i, deviceID) {
-                // создадим устройство, при этом будет запущена подгрузка данных по нему
-                device = new CryptoDevice({
-                    id: deviceID,
-                    plugin: plugin,
-                    initResultCallback: checkAllDevicesReady,
-                    initErrorCallback: errorCallback
+            // если есть устройства подгрузим данные по ним
+            if (deviceIDs.length)
+                $.each(deviceIDs, function (i, deviceID) {
+                    // создадим устройство, при этом будет запущена подгрузка данных по нему
+                    device = new CryptoDevice({
+                        id: deviceID,
+                        plugin: plugin,
+                        initResultCallback: checkAllDevicesReady,
+                        initErrorCallback: errorCallback
+                    });
+                    devicesHash[deviceID] = device;
                 });
-                devicesHash[deviceID] = device;
-            })
+
+            // если устройств нет сразу вызываем обработчик готовности
+            else
+                checkAllDevicesReady();
         }
 
 

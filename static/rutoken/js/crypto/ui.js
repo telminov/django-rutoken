@@ -5,6 +5,7 @@
  *      devicesSelect - css-селектор списка устройств (обязательный для работы метода refreshDevices без параметров. в противном случае можно не указывать)
  *      certsSelect - css-селектор списка сертификатов (необязательный)
  *      keysSelect - css-селектор списка ключей (необязательный)
+ *      createPluginObject - флаг необходимости создания объекта плагина, если его нет на странице
  *      plugin - объект CryptoPlugin (необязательный)
  * @constructor
  */
@@ -16,7 +17,9 @@ function CryptoUI(param) {
     this.devicesSelect = $(param.devicesSelect);
     this.certsSelect = $(param.certsSelect);
     this.keysSelect = $(param.keysSelect);
-    this.plugin = param.plugin || new CryptoPlugin();
+
+    var createPluginObject = param.createPluginObject || false;
+    this.plugin = param.plugin || new CryptoPlugin(createPluginObject);
 
     // проверка валидности плагина
     if (!this.plugin.is_valid())
@@ -32,14 +35,14 @@ CryptoUI.prototype = {
     refreshDevices: function(resultCallback, devicesSelect) {
         var ui = this;
         devicesSelect = devicesSelect || ui.devicesSelect;
-        if (!devicesSelect) throw 'Not set parameter "devicesSelect"';
+        if (!devicesSelect.length) throw 'Not set parameter "devicesSelect"';
 
         // обнулим текущий список
         devicesSelect.find('option').remove();
         devicesSelect.append('<option>Список обновляется...</option>');
 
         // запустим обновлений списка устройств
-        this.plugin.refreshDevicesInfo(
+        this.plugin.refreshDevices(
             refreshCallback,
             errorCallback
         );
