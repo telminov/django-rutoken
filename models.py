@@ -24,7 +24,7 @@ class CertificateRequest(models.Model):
     snils = models.CharField(max_length=12, verbose_name=u'СНИЛС', blank=True)
     ogrn = models.CharField(max_length=12, verbose_name=u'ОГРН', blank=True)
 
-    pem_text = models.TextField(verbose_name=u'Тело запроса', help_text=u'Текст запроса в формате PEM',)
+    pem_text = models.TextField(verbose_name=u'Тело запроса', help_text=u'Текст запроса в формате PEM', blank=True)
     pem_file = models.FileField(upload_to='rutoken/request_certs', verbose_name=u'PEM', help_text=u'Файл завроса в формате PEM', editable=False, null=True)
 
     dc = models.DateTimeField(auto_now_add=True, verbose_name=u'Дата/время создания')
@@ -43,7 +43,7 @@ class Certificate(models.Model):
     """
         Сертификат
     """
-    serial_number = models.AutoField(primary_key=True, verbose_name=u'Серийный номер', help_text=u'Серийны номер сертификата. Уникален в пределах удостоверяющего центра')
+    serial_number = models.IntegerField(unique=True, verbose_name=u'Серийный номер', help_text=u'Серийны номер сертификата. Уникален в пределах удостоверяющего центра')
 
     request = models.ForeignKey(CertificateRequest, verbose_name=u'Запрос', null=True, help_text=u'Запрос на сертификат')
     user = models.ForeignKey(AuthUser, verbose_name=u'Пользователь', null=True, related_name='certificates', help_text=u'Пользователь с которым может быть связан сертификат')

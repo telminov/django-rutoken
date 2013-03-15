@@ -110,6 +110,7 @@ class CertificateRequest(forms.ModelForm):
     class Media:
         js = (
             'http://yandex.st/jquery/1.7.2/jquery.js',
+            # 'http://yandex.st/bootstrap/2.3.1/js/bootstrap.min.js',
             '%s/rutoken/js/crypto/ui.js' % settings.STATIC_URL,
             '%s/rutoken/js/crypto/plugin.js' % settings.STATIC_URL,
             '%s/rutoken/js/crypto/device.js' % settings.STATIC_URL,
@@ -117,7 +118,7 @@ class CertificateRequest(forms.ModelForm):
             '%s/rutoken/js/certificate_request.js' % settings.STATIC_URL,
         )
         css = {
-            'main': ('http://yandex.st/bootstrap/2.3.1/js/bootstrap.min.js', )
+            # 'screen': ('http://yandex.st/bootstrap/2.3.1/css/bootstrap.min.css', )
         }
 
     def __init__(self, *args, **kwargs):
