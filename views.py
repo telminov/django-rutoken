@@ -17,7 +17,9 @@ from rutoken.forms import Login as LoginForm
 def login(request, template_name='rutoken/login.html',
           redirect_field_name=REDIRECT_FIELD_NAME,
           authentication_form=LoginForm,
-          current_app=None, extra_context=None):
+          current_app=None, extra_context=None,
+          logger=None
+          ):
 
     """
         Почти полный копипаст django.contrib.auth.views.login.
@@ -41,6 +43,9 @@ def login(request, template_name='rutoken/login.html',
 
             if request.session.test_cookie_worked():
                 request.session.delete_test_cookie()
+
+            if logger:
+                logger.info(u'User "%s" login.' % request.user)
 
             return HttpResponseRedirect(redirect_to)
     else:
