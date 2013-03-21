@@ -1,5 +1,5 @@
 $(function (){
-    var URL_PEM_REQUEST_MODAL = '/rutoken/pem_request_modal/'; //TODO: надо как-то пробросить из настроек. Сейчас предполагается, что прилоение rutoken подключено с префиксом rutoken в урле
+    var URL_PEM_REQUEST_MODAL = '/rutoken/pem_request_popup/'; //TODO: надо как-то пробросить из настроек. Сейчас предполагается, что прилоение rutoken подключено с префиксом rutoken в урле
 
     prepareRequestGenerator();
 

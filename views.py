@@ -69,5 +69,5 @@ def login(request, template_name='rutoken/login.html',
     return TemplateResponse(request, template_name, context, current_app=current_app)
 
 
-def pem_request_modal(request):
-    return render(request, 'rutoken/pem_request_modal.html')
+def pem_request_popup(request):
+    return render(request, 'rutoken/pem_request_popup.html')
