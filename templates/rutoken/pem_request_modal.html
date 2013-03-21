@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="utf-8">
+        <title>Генерация запроса</title>
+
+        <link href="http://yandex.st/bootstrap/2.3.1/css/bootstrap.min.css" rel="stylesheet" id="main-theme-script">
+
+{#        <script src="http://yandex.st/jquery/1.7.2/jquery.js"></script>#}
+{#        <script src="http://yandex.st/bootstrap/2.3.1/js/bootstrap.min.js"></script>#}
+    </head>
+
+    <body>
+        <h3>Генерация запроса на сертификат</h3>
+
+        <form class="form-horizontal">
+
+            <div class="control-group">
+                <label class="control-label" for="devices">Устройства</label>
+                <div class="controls">
+                    <select id="devices"></select>
+                    <button id="show_pin" type="button" class="btn btn-small">Ввести PIN</button>
+                </div>
+            </div>
+
+            <div class="control-group pin_group hide">
+                <label class="control-label" for="pin_input">PIN-код</label>
+                <div class="controls">
+                    <input type="password" id="pin_input" />
+                    <button id="login" type="button" class="btn btn-small btn-success">Войти</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label" for="keys">Ключи</label>
+                <div class="controls">
+                    <select id="keys"></select>
+                    <button id="add_key" type="button" class="btn btn-small">Добавить</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label" for="pem_text">Текст запроса</label>
+                <div class="controls">
+                    <textarea id="pem_text"></textarea>
+                    <button id="gen_request" type="button" class="btn btn-small">Сгенерировать</button>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn close_btn">Закрыть</button>
+                <button type="submit" class="btn btn-primary submit_btn">Использовать</button>
+            </div>
+        </form>
+
+    </body>
+</html>

@@ -20,6 +20,7 @@ CryptoDevice.prototype = {
     model: null,
     type: null,
     keys: null,
+    is_login: false,    // залогинен ли на устройстве пользователь
     certs: {'user': null, 'ca': null, 'other': null},
 
     /**
@@ -27,7 +28,6 @@ CryptoDevice.prototype = {
      */
     is_inited: function() {
         var inited = true;
-
 
         // если одно из стартовых свойств еще не прогружено, снимем флаг
         if (!this.label) inited = false;
@@ -170,30 +170,79 @@ CryptoDevice.prototype = {
      * @param errorCallback
      */
     login: function(pin, resultCallback, errorCallback) {
+        var device = this;
+
         this.plugin.pluginObject.login(
             this.id,
             pin,
-            resultCallback,
+            loginCallback,
             errorCallback
-        )
+        );
+
+        function loginCallback() {
+            device.is_login = true;
+            resultCallback();
+        }
     },
 
     /**
-     * TODO: набросок работы с ключами
-     * @param resultCallback
+     * обновление списка ключей
+     * @param resultCallback - обработчик окончания загрузки данных по ключам. В него передается список загруженных ключей.
      * @param errorCallback
      */
     refreshKeys: function(resultCallback, errorCallback) {
         var device = this;
-        this.plugin.pluginObject.enumerateKeys(
+        var keysHash = {};
+
+        device.plugin.pluginObject.enumerateKeys(
             device.id,
             "",
-            function(keys) {
-                device.keys = keys;
-                resultCallback(keys);
-            },
+            enumerateCallback,
             errorCallback
         );
+
+
+        function enumerateCallback(keyIDs) {
+            // если есть ключи подгрузим данные
+            if (keyIDs.length)
+                $.each(keyIDs, function (i, keyID){
+                    // создадим ключ, при этом будет запущена подгрузка данных по нему
+                    keysHash[keyID] = new CryptoKey({
+                        id: keyID,
+                        device: device,
+                        initResultCallback: checkAllKeysReady,
+                        initErrorCallback: errorCallback
+                    });
+                });
+
+            // если ключей нет, сразу вызываем обработчик готовности
+            else
+                checkAllKeysReady();
+        }
+
+        /**
+         * Функция проверяет вся ли инфа об устроствах загружена.
+         * Как только загрузка завершена, вызывается колбек
+         */
+        function checkAllKeysReady() {
+            var allReady = true;
+            var keys = [];
+
+            // сбросим флаг если хоть один из ключей еще не прогрузился
+            $.each(keysHash, function (i, key) {
+                keys.push(key);
+
+                if (!key.is_inited())
+                    allReady = false;
+            });
+
+            if (allReady) {
+                device.keys = keys;
+
+                // обработчик окончания обновления списка устройств
+                resultCallback(device.keys)
+            }
+        }
     },
 
     /**

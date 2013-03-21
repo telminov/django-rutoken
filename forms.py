@@ -115,6 +115,7 @@ class CertificateRequest(forms.ModelForm):
             '%s/rutoken/js/crypto/plugin.js' % settings.STATIC_URL,
             '%s/rutoken/js/crypto/device.js' % settings.STATIC_URL,
             '%s/rutoken/js/crypto/cert.js' % settings.STATIC_URL,
+            '%s/rutoken/js/crypto/key.js' % settings.STATIC_URL,
             '%s/rutoken/js/certificate_request.js' % settings.STATIC_URL,
         )
         css = {
@@ -135,5 +136,6 @@ class Certificate(forms.ModelForm):
 
     class Media:
         js = (
+            '%s/rutoken/js/popup_window.js' % settings.STATIC_URL,
             '%s/rutoken/js/certificate.js' % settings.STATIC_URL,
         )

@@ -1,6 +1,7 @@
 # coding: utf-8
 from django.http import HttpResponseRedirect
 from django.conf import settings
+from django.shortcuts import render
 from django.template.response import TemplateResponse
 from django.utils.http import is_safe_url
 from django.views.decorators.cache import never_cache
@@ -66,3 +67,7 @@ def login(request, template_name='rutoken/login.html',
         context.update(extra_context)
 
     return TemplateResponse(request, template_name, context, current_app=current_app)
+
+
+def pem_request_modal(request):
+    return render(request, 'rutoken/pem_request_modal.html')

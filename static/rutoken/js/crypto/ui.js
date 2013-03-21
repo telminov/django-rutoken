@@ -31,6 +31,7 @@ CryptoUI.prototype = {
     /**
      * Обновляет список устройств.
      * @param resultCallback - обработчик окончания обновления списка устройств
+     * @param devicesSelect - селектор списка ключей
      */
     refreshDevices: function(resultCallback, devicesSelect) {
         var ui = this;
@@ -77,6 +78,48 @@ CryptoUI.prototype = {
         }
     },
 
+
+    /**
+     * Обновляет список ключей.
+     * @param resultCallback - обработчик окончания обновления списка ключей
+     * @param keysSelect - селектор списка ключей
+     */
+    refreshKeys: function(deviceID, resultCallback, keysSelect) {
+        var ui = this;
+        keysSelect = keysSelect || ui.keysSelect;
+        if (!keysSelect.length) throw 'Not set parameter "keysSelect"';
+
+        // обнулим текущий список
+        keysSelect.find('option').remove();
+        keysSelect.append('<option>Список обновляется...</option>');
+
+        // запустим обновлений списка устройств
+        this.plugin.getDeviceByID(deviceID).refreshKeys(
+            refreshCallback,
+            errorCallback
+        );
+
+        /**
+         * по результатам обновления инфы о ключах
+         * отрисуем список ключей
+         */
+        function refreshCallback(keys) {
+            // обновим список ключей
+            keysSelect.find('option').remove();
+            $.each(keys, function(i, key){
+                var option_html = '<option value="'+ key.id +'">'+ key.label +'</option>';
+                keysSelect.append(option_html);
+            });
+
+            if (resultCallback)
+                resultCallback(keys);
+        }
+
+        function errorCallback (errorCode) {
+            ui.errorCallback(errorCode)
+        }
+    },
+
     /**
      * логин на устройстве
      * @param param параметры:
@@ -96,6 +139,7 @@ CryptoUI.prototype = {
             return;
         }
 
+        var device = ui.plugin.getDeviceByID(selectedDeviceID);
         var pinInput = loginModal.find('input:first');
         var primaryButton = loginModal.find('.btn-primary');
 
@@ -137,7 +181,7 @@ CryptoUI.prototype = {
                 return;
             }
 
-            var device = ui.plugin.devices[selectedDeviceID];
+            var device = ui.plugin.getDeviceByID(selectedDeviceID);
             device.login(pin, resultCallback, errorCallback);
 
 

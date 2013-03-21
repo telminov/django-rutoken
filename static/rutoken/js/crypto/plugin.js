@@ -68,7 +68,7 @@ CryptoPlugin.prototype = {
         var devicesHash = {};
 
         // запросим списк устройств
-        this.pluginObject.enumerateDevices(
+        plugin.pluginObject.enumerateDevices(
             enumerateCallback,
             errorCallback
         );
@@ -79,13 +79,12 @@ CryptoPlugin.prototype = {
             if (deviceIDs.length)
                 $.each(deviceIDs, function (i, deviceID) {
                     // создадим устройство, при этом будет запущена подгрузка данных по нему
-                    device = new CryptoDevice({
+                    devicesHash[deviceID] = new CryptoDevice({
                         id: deviceID,
                         plugin: plugin,
                         initResultCallback: checkAllDevicesReady,
                         initErrorCallback: errorCallback
                     });
-                    devicesHash[deviceID] = device;
                 });
 
             // если устройств нет сразу вызываем обработчик готовности
@@ -95,7 +94,7 @@ CryptoPlugin.prototype = {
 
 
         /**
-         * Функция проверяет вся ди инфа об устроствах загружена.
+         * Функция проверяет вся ли инфа об устроствах загружена.
          * Как только загрузка завершена, вызывается колбек
          */
         function checkAllDevicesReady() {
