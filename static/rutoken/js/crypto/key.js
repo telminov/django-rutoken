@@ -47,7 +47,25 @@ CryptoKey.prototype = {
         }
     },
 
-    createRequest: function(){
+    /**
+     * обертка для формирования запроса на сертификат
+     * @param subject Массив, содержащий объекты вида: {rdn: "commonName", value: "значение"}
+     * @param extensions Ассоциативный массив, содержащий массивы расширений: {keyUsage: ["digitalSignature",...], extKeyUsage: ["oid", "longName" ]}
+     * @param resultCallback
+     * @param errorCallback
+     */
+    createRequest: function(subject, extensions, resultCallback, errorCallback){
+        var key = this;
+        var includeSubjSignTool = true;
 
+        key.device.plugin.pluginObject.createPkcs10(
+            key.device.id,
+            key.id,
+            subject,
+            extensions,
+            includeSubjSignTool,
+            resultCallback,
+            errorCallback
+        )
     }
 };

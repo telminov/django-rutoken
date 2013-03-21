@@ -283,6 +283,20 @@ CryptoDevice.prototype = {
     },
 
     /**
+     * метод ищет среди ключей устройства ключ с заданным ID. В случае необнаружения генерируем исключение.
+     * @param keyID идентификатор запрашиваемого ключа
+     * @returns ключ
+     */
+    getKeyByID: function(keyID) {
+        for (var i=0; i < this.keys.length; i++) {
+            if (this.keys[i].id == keyID)
+                return this.keys[i];
+        }
+
+        throw 'Key with ID "'+ keyID +'" dose not exists on device with ID "'+ this.id +'"';
+    },
+
+    /**
      * формирует развернутое описание устройства
      * @returns {string}
      */

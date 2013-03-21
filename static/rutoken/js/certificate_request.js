@@ -20,7 +20,7 @@ $(function (){
          * вся логика генерации pem-кода запроса в отдельном окне
          */
         function openPopup() {
-            var popup = window.open(URL_PEM_REQUEST_MODAL, '', 'width=700,height=400');
+            var popup = window.open(URL_PEM_REQUEST_MODAL, '', 'width=1000,height=500');
             popup.onload = popupLoadHandler;
 
 
@@ -173,8 +173,10 @@ $(function (){
                         genRequestBtn.click(generateRequest);
                     } else {
                         genRequestBtn.unbind('click');
+                        submitBtn.unbind('click');
                         pemText.attr('disabled', 'disabled');
                         genRequestBtn.attr('disabled', 'disabled');
+                        submitBtn.attr('disabled', 'disabled');
                     }
                 }
 
@@ -183,7 +185,69 @@ $(function (){
                  * и заполняет текстовое поле полученным кодом PEM-запроса
                  */
                 function generateRequest() {
+                    var subject = [];
+                    var subjectFieldMap = {
+                        countryName: '#id_country',
+                        stateOrProvinceName: '#id_state',
+                        localityName: '#id_locality',
+                        organizationName: '#id_org_name',
+                        organizationalUnitName: '#id_org_unit',
+                        commonName: '#id_common_name',
+                        surname: '#id_surname',
+                        givenName: '#id_given_name',
+                        emailAddress: '#id_email',
+                        title: '#id_title',
+                        streetAddress: '#id_street_address',
+                        postalAddress: '#id_postal_address',
+                        INN: '#id_inn',
+                        SNILS: '#id_snils',
+                        OGRN: '#id_ogrn'
+                    };
 
+                    $.each(subjectFieldMap, function(subjectName) {
+                        var fieldSelector = subjectFieldMap[subjectName];
+                        var value = $(fieldSelector).val();
+                        if (value)
+                            subject.push({
+                                rdn: subjectName,
+                                value: value
+                            })
+                    });
+
+                    var extensions = {
+                        keyUsage:     [],
+                        extKeyUsage:  [],
+                        certificatePolicies: []
+                    };
+
+                    var device = crypto_ui.plugin.getDeviceByID(devicesSelect.val());
+                    var key = device.getKeyByID(keysSelect.val());
+                    key.createRequest(
+                        subject,
+                        extensions,
+                        requestHandler,
+                        errorHandler
+                    );
+
+
+                    /**
+                     * обработка успешной генерации
+                     * @param pem
+                     */
+                    function requestHandler(pem) {
+                        pemText.val(pem);
+
+                        // уберем сообщения об ошибках, если были
+                        $(popup.document).find('.alert').remove();
+
+                        submitBtn.removeAttr('disabled');
+                        submitBtn.click(submitHandler);
+                        submitBtn.focus();
+                    }
+
+                    function errorHandler(errorCode) {
+                        crypto_ui.errorCallback(errorCode);
+                    }
                 }
 
 
@@ -194,14 +258,12 @@ $(function (){
                 function submitHandler(event) {
                     event.preventDefault();
                     popup.close();
+
+                    // обновим значение текста запроса в форме
+                    var pem = pemText.val();
+                    $('#id_pem_text').val(pem);
                 }
             }
-
         }
     }
-
-
-
-
-
 });
