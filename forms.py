@@ -1,13 +1,15 @@
 # coding: utf-8
 from random import randint
+import re
 
 from django import forms
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import authenticate
 
 from rutoken import models
-from rutoken.openssl import OpensslVerifyException
+from rutoken import openssl
 from rutoken.auth_backend import AuthException
 
 
@@ -73,7 +75,7 @@ class Login(forms.Form):
                     raise forms.ValidationError(self.error_messages['inactive'])
             self.check_for_test_cookie()
 
-        except OpensslVerifyException, ex:
+        except openssl.OpensslVerifyException, ex:
             raise forms.ValidationError(u"Ошибка верификации аутентификационной строки (%s)" % ex)
         except AuthException, ex:
             raise forms.ValidationError(u"Ошибка аутентификации: %s" % ex)
@@ -128,14 +130,64 @@ class CertificateRequest(forms.ModelForm):
         # селекторы для js-кода формы
         self.fields['pem_text'].widget.attrs['class'] = 'pem_text'
 
+    def clean(self):
+        cleaned_data = self.cleaned_data
+
+        # TODO: запретить редактировать, если по запросу создан сертификат
+
+        return cleaned_data
+
+
+    def save(self, *args, **kwargs):
+        cert_request = super(CertificateRequest, self).save(*args, **kwargs)
+
+        # создадим файл с запросом
+        if cert_request.pem_text:
+            cert_request.pem_file.save('%s.pem' % cert_request.id, ContentFile(cert_request.pem_text.encode('utf-8')))
+        # или удалим его, если текст запроса был удален
+        elif cert_request.pem_file:
+            cert_request.pem_file.delete()
+
+        return cert_request
+
+
 
 class Certificate(forms.ModelForm):
+    serial_number = forms.IntegerField(label=u'Серийный номер', required=False)
+    request = forms.ModelChoiceField(
+        label=u'Запросы',
+        required=True,
+        queryset=models.CertificateRequest.objects.get_empty_query_set()
+    )
+    info = forms.CharField(label=u'Информация', required=False, widget=forms.Textarea)
 
     class Meta:
         model = models.Certificate
+        exclude = ('dd', 'pem', )
 
     class Media:
         js = (
-            '%s/rutoken/js/popup_window.js' % settings.STATIC_URL,
             '%s/rutoken/js/certificate.js' % settings.STATIC_URL,
         )
+
+    def __init__(self, *args, **kwargs):
+        super(Certificate, self).__init__(*args, **kwargs)
+
+        if self.instance.id:
+            self.fields['request'].queryset = models.CertificateRequest.objects.filter(certificate=self.instance)
+        else:
+            self.fields['request'].queryset = models.CertificateRequest.objects.filter(pem_file__isnull=False, certificate__isnull=True)
+
+    def save(self, *args, **kwargs):
+        cert_request = self.cleaned_data['request']
+
+        cert_text = openssl.create_cert(cert_request.pem_file.path)
+        info = cert_text.split('-----BEGIN CERTIFICATE-----')[0]
+        serial_number = re.search(r'Serial Number: (\d+)', info).group(1)
+
+        self.instance.info = info
+        self.instance.serial_number = int(serial_number)
+        self.instance.pem.save('%s.pem' % cert_request.id, ContentFile(cert_text.encode('utf-8')))
+
+        cert = super(Certificate, self).save(*args, **kwargs)
+        return cert

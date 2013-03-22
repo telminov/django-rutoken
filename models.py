@@ -45,7 +45,7 @@ class Certificate(models.Model):
     """
     serial_number = models.IntegerField(unique=True, verbose_name=u'Серийный номер', help_text=u'Серийны номер сертификата. Уникален в пределах удостоверяющего центра')
 
-    request = models.ForeignKey(CertificateRequest, verbose_name=u'Запрос', null=True, help_text=u'Запрос на сертификат')
+    request = models.OneToOneField(CertificateRequest, verbose_name=u'Запрос', null=True, related_name='certificate', help_text=u'Запрос на сертификат')
     user = models.ForeignKey(AuthUser, verbose_name=u'Пользователь', null=True, related_name='certificates', help_text=u'Пользователь с которым может быть связан сертификат')
 
     info = models.TextField(verbose_name=u'Информация')
@@ -55,3 +55,11 @@ class Certificate(models.Model):
     dm = models.DateTimeField(auto_now=True, verbose_name=u'Дата/время последней модификации')
     dd = models.DateTimeField(null=True, verbose_name=u'Дата/время удаления', blank=True)
 
+
+    class Meta:
+        verbose_name = u'Сертификат'
+        verbose_name_plural = u'Сертификаты'
+        ordering = ('-dc', )
+
+    def __unicode__(self):
+        return u'%s' % (self.serial_number,)

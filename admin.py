@@ -14,5 +14,9 @@ class CertificateRequest(admin.ModelAdmin):
         qs = super(CertificateRequest, self).queryset(request)
         qs = qs.filter(dd__isnull=True)
         return qs
-
 admin.site.register(models.CertificateRequest, CertificateRequest)
+
+
+class Certificate(admin.ModelAdmin):
+    form = forms.Certificate
+admin.site.register(models.Certificate, Certificate)

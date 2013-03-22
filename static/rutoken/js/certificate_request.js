@@ -2,6 +2,17 @@ $(function (){
     var URL_PEM_REQUEST_MODAL = '/rutoken/pem_request_popup/'; //TODO: надо как-то пробросить из настроек. Сейчас предполагается, что прилоение rutoken подключено с префиксом rutoken в урле
 
     prepareRequestGenerator();
+    prepareInputChangeHandler();
+
+    /**
+     * если меняется значение какого-нибудь из волей ввод, сбрасываем значение сертификата,
+     * так как оно генерится на основание значений полей
+     */
+    function prepareInputChangeHandler(){
+        $('input[type=text]').change(function(){
+            $('.pem_text').val('');
+        })
+    }
 
 
     /**
@@ -262,6 +273,9 @@ $(function (){
                     // обновим значение текста запроса в форме
                     var pem = pemText.val();
                     $('#id_pem_text').val(pem);
+
+                    // установим фокус на сохранение формы
+                    $('input[type=submit][name=_save]').focus();
                 }
             }
         }

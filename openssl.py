@@ -3,8 +3,8 @@
 import tempfile
 import commands
 import shutil
+import pexpect
 
-from rutoken import models
 from django.conf import settings
 
 
@@ -14,12 +14,50 @@ class OpensslVerifyException(Exception): pass
 def create_cert(request_path):
     """
         Обрабатывает запрос на сертификат.
-        Принимает путь к файл запроса в формате PEM.
-        Возвращает путь к созданному сертификату.
+        Принимает путь к файлу запроса в формате PEM.
+        Возвращает содержимое файла сертификату.
         Возбуждает исключение OpensslCreateCertException в случае ошибки формирования сертификата.
     """
-    #TODO: реализовать
-    return ''
+
+    # временный каталог для генерации промежуточных файлов
+    tmpdir = tempfile.mkdtemp()
+
+    # путь к временному выходному файлу
+    cert_path = tempfile.mktemp(dir=tmpdir, prefix='cert_', suffix='.pem')
+
+    # сформируем сертификат
+    cmd = '%(openssl)s ca -config openssl.cnf  -in %(request_path)s -out %(cert_path)s -engine gost' % {
+        'pki_ca': settings.PKI_CA_PATH,
+        'openssl': settings.OPENSSL_BIN_PATH,
+        'request_path': request_path,
+        'cert_path': cert_path,
+    }
+
+
+    child = pexpect.spawn('bash',
+                          args=['-c', cmd],
+                          cwd=settings.PKI_CA_PATH)
+    child.expect('Enter pass phrase for .*cakey.pem:')
+    child.sendline(settings.PKI_CERT_PASSWD)
+    child.expect('Sign the certificate?')
+    child.sendline('y')
+    i = child.expect(['1 out of 1 certificate requests certified, commit?', pexpect.EOF])
+    if i==0:
+        child.sendline('y')
+    else:
+        raise OpensslCreateCertException(u'Ошибка формирования сертификата:\n%s\n\n%s' % (cmd, child.before))
+    child.expect(pexpect.EOF)
+
+
+    # считаем сертификат в переменную
+    cert_file = open(cert_path, "r")
+    cert_text = cert_file.read()
+    cert_file.close()
+
+    # удалим временный каталог
+    shutil.rmtree(tmpdir)
+
+    return cert_text
 
 
 def verify_auth(cert_path, auth_sign):
