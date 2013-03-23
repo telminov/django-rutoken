@@ -2,13 +2,13 @@
 <html lang="ru">
     <head>
         <meta charset="utf-8">
-        <title>Генерация запроса</title>
+        <title>Импорт сертификата на устройство</title>
 
         <link href="http://yandex.st/bootstrap/2.3.1/css/bootstrap.min.css" rel="stylesheet" id="main-theme-script">
     </head>
 
     <body>
-        <h3>Генерация запроса на сертификат</h3>
+        <h3>Импорт сертификата на устройство</h3>
 
         <form class="form-horizontal">
 
@@ -29,24 +29,15 @@
             </div>
 
             <div class="control-group">
-                <label class="control-label" for="keys">Ключи</label>
-                <div class="controls">
-                    <select id="keys"></select>
-                    <button id="add_key" type="button" class="btn btn-small">Добавить</button>
-                </div>
-            </div>
-
-            <div class="control-group">
-                <label class="control-label" for="pem_text">Текст запроса</label>
+                <label class="control-label" for="pem_text">Тело сертификата</label>
                 <div class="controls">
                     <textarea id="pem_text" rows="10" class="span9 small"></textarea>
-                    <button id="gen_request" type="button" class="btn btn-small">Сгенерировать</button>
                 </div>
             </div>
 
             <div class="form-actions">
                 <button type="button" class="btn close_btn">Закрыть</button>
-                <button type="submit" class="btn btn-primary submit_btn">Использовать</button>
+                <button type="submit" class="btn btn-primary submit_btn">Импортировать</button>
             </div>
         </form>
 

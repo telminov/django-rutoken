@@ -112,20 +112,25 @@ class CertificateRequest(forms.ModelForm):
     class Media:
         js = (
             'http://yandex.st/jquery/1.7.2/jquery.js',
-            # 'http://yandex.st/bootstrap/2.3.1/js/bootstrap.min.js',
             '%s/rutoken/js/crypto/ui.js' % settings.STATIC_URL,
             '%s/rutoken/js/crypto/plugin.js' % settings.STATIC_URL,
             '%s/rutoken/js/crypto/device.js' % settings.STATIC_URL,
             '%s/rutoken/js/crypto/cert.js' % settings.STATIC_URL,
             '%s/rutoken/js/crypto/key.js' % settings.STATIC_URL,
+            '%s/rutoken/js/certificate_utils.js' % settings.STATIC_URL,
             '%s/rutoken/js/certificate_request.js' % settings.STATIC_URL,
         )
-        css = {
-            # 'screen': ('http://yandex.st/bootstrap/2.3.1/css/bootstrap.min.css', )
-        }
 
     def __init__(self, *args, **kwargs):
         super(CertificateRequest, self).__init__(*args, **kwargs)
+
+        # инциализируем значениями из настроек
+        if hasattr(settings, 'PKI_CA_COUNTRY'):
+            self.fields['country'].initial = settings.PKI_CA_COUNTRY
+        if hasattr(settings, 'PKI_CA_STATE'):
+            self.fields['state'].initial = settings.PKI_CA_STATE
+        if hasattr(settings, 'PKI_CA_ORG'):
+            self.fields['org_name'].initial = settings.PKI_CA_ORG
 
         # селекторы для js-кода формы
         self.fields['pem_text'].widget.attrs['class'] = 'pem_text'
@@ -133,7 +138,9 @@ class CertificateRequest(forms.ModelForm):
     def clean(self):
         cleaned_data = self.cleaned_data
 
-        # TODO: запретить редактировать, если по запросу создан сертификат
+        # запертим редактирование, если есть сертификат по запросу
+        if self.instance.id and models.Certificate.objects.filter(request=self.instance.id).exists():
+            raise forms.ValidationError(u'Нельзя изменить запрос - по нему уже существует сертификат')
 
         return cleaned_data
 
@@ -155,11 +162,11 @@ class CertificateRequest(forms.ModelForm):
 class Certificate(forms.ModelForm):
     serial_number = forms.IntegerField(label=u'Серийный номер', required=False)
     request = forms.ModelChoiceField(
-        label=u'Запросы',
+        label=u'Запрос',
         required=True,
-        queryset=models.CertificateRequest.objects.get_empty_query_set()
+        queryset=models.CertificateRequest.objects.get_empty_query_set(),
+        help_text=u'Запрос на сертификат'
     )
-    info = forms.CharField(label=u'Информация', required=False, widget=forms.Textarea)
 
     class Meta:
         model = models.Certificate
@@ -167,27 +174,66 @@ class Certificate(forms.ModelForm):
 
     class Media:
         js = (
+            'http://yandex.st/jquery/1.7.2/jquery.js',
+            '%s/rutoken/js/crypto/ui.js' % settings.STATIC_URL,
+            '%s/rutoken/js/crypto/plugin.js' % settings.STATIC_URL,
+            '%s/rutoken/js/crypto/device.js' % settings.STATIC_URL,
+            '%s/rutoken/js/crypto/cert.js' % settings.STATIC_URL,
+            '%s/rutoken/js/crypto/key.js' % settings.STATIC_URL,
+            '%s/rutoken/js/certificate_utils.js' % settings.STATIC_URL,
             '%s/rutoken/js/certificate.js' % settings.STATIC_URL,
         )
 
     def __init__(self, *args, **kwargs):
         super(Certificate, self).__init__(*args, **kwargs)
 
+        # для созданны сертификатов, выобр ограничим собственным запросом
         if self.instance.id:
             self.fields['request'].queryset = models.CertificateRequest.objects.filter(certificate=self.instance)
+        # для нового объекта показываем все запросы, не связанные еще сертификатами
         else:
             self.fields['request'].queryset = models.CertificateRequest.objects.filter(pem_file__isnull=False, certificate__isnull=True)
 
+
+    def clean(self):
+        cleaned_data = self.cleaned_data
+
+        # запретим изменять сертификат
+        if self.instance.id:
+            raise forms.ValidationError(u'Нельзя изменять сформированный сертификат')
+
+        # проверим, что пользователь сертификата совпадает с пользователем запроса
+        user = cleaned_data.get('user')
+        request = cleaned_data.get('request')
+        if user and request and request.user != user:
+            msg = u'Пользователь запроса не совпадает с пользователем сертификата'
+            self._errors['user'] = self.error_class([msg])
+            self._errors['request'] = self.error_class([msg])
+            del cleaned_data['user']
+            del cleaned_data['request']
+
+
+        # если задан запрос, попробуем сформировать сертификат
+        cert_request = cleaned_data.get('request')
+        if cert_request:
+            try:
+                cert_text = openssl.create_cert(cert_request.pem_file.path)
+                serial_number = re.search(r'Serial Number: (\d+)', cert_text).group(1)
+
+                cleaned_data['serial_number'] = int(serial_number)
+                cleaned_data['pem_text'] = cert_text
+
+            except openssl.OpensslCreateCertException, ex:
+                raise forms.ValidationError(ex)
+
+        return cleaned_data
+
+
     def save(self, *args, **kwargs):
-        cert_request = self.cleaned_data['request']
-
-        cert_text = openssl.create_cert(cert_request.pem_file.path)
-        info = cert_text.split('-----BEGIN CERTIFICATE-----')[0]
-        serial_number = re.search(r'Serial Number: (\d+)', info).group(1)
-
-        self.instance.info = info
-        self.instance.serial_number = int(serial_number)
-        self.instance.pem.save('%s.pem' % cert_request.id, ContentFile(cert_text.encode('utf-8')))
+        self.instance.serial_number = self.cleaned_data['serial_number']
+        self.instance.pem_text = self.cleaned_data['pem_text']
 
         cert = super(Certificate, self).save(*args, **kwargs)
+
+        cert.pem_file.save('%s.pem' % cert.id, ContentFile(cert.pem_text.encode('utf-8')))
         return cert

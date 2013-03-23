@@ -1,5 +1,5 @@
 $(function (){
-    var URL_PEM_REQUEST_MODAL = '/rutoken/pem_request_popup/'; //TODO: надо как-то пробросить из настроек. Сейчас предполагается, что прилоение rutoken подключено с префиксом rutoken в урле
+    var URL_PEM_REQUEST_POPUP = '/rutoken/pem_request_popup/'; //TODO: надо как-то пробросить из настроек. Сейчас предполагается, что прилоение rutoken подключено с префиксом rutoken в урле
 
     prepareRequestGenerator();
     prepareInputChangeHandler();
@@ -20,7 +20,7 @@ $(function (){
      */
     function prepareRequestGenerator() {
 
-        // нарисуем список устройств и кнопку генерации запроса
+        // нарисуем кнопку генерации запроса
         var pemText = $('.pem_text');
         var pemGenButton = $('<input type="button" id="pem_text_gen_button" value="Сгенерировать"/>').insertAfter(pemText);
         // окно генерации
@@ -31,7 +31,7 @@ $(function (){
          * вся логика генерации pem-кода запроса в отдельном окне
          */
         function openPopup() {
-            var popup = window.open(URL_PEM_REQUEST_MODAL, '', 'width=1000,height=500');
+            var popup = window.open(URL_PEM_REQUEST_POPUP, '', 'width=1000,height=500');
             popup.onload = popupLoadHandler;
 
 
@@ -107,7 +107,9 @@ $(function (){
 
                     // если на устройстве еще не залогинены предоставим возможность залогинится
                     } else {
-                        showPinBtn.click(loginInSelectedDevice);
+                        showPinBtn.click(function(){
+                            loginInSelectedDevice(devicesSelect, pinGroup, pinInput, loginBtn, showPinBtn, popup, crypto_ui, loginCallback)
+                        });
                         showPinBtn.removeAttr('disabled');
                         showPinBtn.focus();
                     }
@@ -115,60 +117,11 @@ $(function (){
 
 
                 /**
-                 * логин на устройства
+                 * обработчик успешного входа
                  */
-                function loginInSelectedDevice() {
-                    var device = crypto_ui.plugin.getDeviceByID(devicesSelect.val());
-                    pinGroup.show();
-                    pinInput.focus();
-                    loginBtn.removeAttr('disabled');
-
-                    // повесим обработчики ввода пароля
-                    loginBtn.click(pinHandler);
-                    pinInput.keypress(
-                        function(e){
-                            if (e.keyCode == 13)        // ввод Enter
-                                pinHandler()
-                        }
-                    );
-
-                    /**
-                     * обработчик ввода PIN-кода
-                     */
-                    function pinHandler(){
-                        var pin = pinInput.val();
-                        device.login(pin, loginHandler, errorHandler);
-                    }
-
-                    /**
-                     * обработчик успешного входа
-                     */
-                    function loginHandler() {
-                        // уберем обработчики
-                        loginBtn.unbind('click');
-                        pinInput.unbind('keypress');
-
-                        // скроем кнопки
-                        showPinBtn.attr('disabled', 'disabled');
-                        loginBtn.attr('disabled', 'disabled');
-                        pinGroup.hide();
-
-                        // уберем сообщения об ошибках, если были
-                        $(popup.document).find('.alert').remove();
-
-                        crypto_ui.refreshKeys(devicesSelect.val(), keysRefreshCallback);
-                    }
-
-                    /**
-                     * обработчик ошибки входа
-                     * @param errorCode
-                     */
-                    function errorHandler(errorCode) {
-                        crypto_ui.errorCallback(errorCode);
-                        pinInput.select();
-                    }
+                function loginCallback() {
+                    crypto_ui.refreshKeys(devicesSelect.val(), keysRefreshCallback);
                 }
-
 
                 /**
                  * по результатам подгрузки ключей

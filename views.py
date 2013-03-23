@@ -71,3 +71,6 @@ def login(request, template_name='rutoken/login.html',
 
 def pem_request_popup(request):
     return render(request, 'rutoken/pem_request_popup.html')
+
+def pem_cert_popup(request):
+    return render(request, 'rutoken/pem_cert_popup.html')

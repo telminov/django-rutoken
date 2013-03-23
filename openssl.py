@@ -32,22 +32,24 @@ def create_cert(request_path):
         'request_path': request_path,
         'cert_path': cert_path,
     }
-
-
-    child = pexpect.spawn('bash',
-                          args=['-c', cmd],
-                          cwd=settings.PKI_CA_PATH)
+    child = pexpect.spawn('bash', args=['-c', cmd], cwd=settings.PKI_CA_PATH)
+    # пароль к сертификату УЦ
     child.expect('Enter pass phrase for .*cakey.pem:')
     child.sendline(settings.PKI_CERT_PASSWD)
-    child.expect('Sign the certificate?')
-    child.sendline('y')
-    i = child.expect(['1 out of 1 certificate requests certified, commit?', pexpect.EOF])
-    if i==0:
+    # подтверждение корректности данных сертификата
+    i = child.expect(['Sign the certificate?', pexpect.EOF])
+    if i == 0:
         child.sendline('y')
     else:
-        raise OpensslCreateCertException(u'Ошибка формирования сертификата:\n%s\n\n%s' % (cmd, child.before))
-    child.expect(pexpect.EOF)
+        raise OpensslCreateCertException(u'Ошибка формирования сертификата:\n%s;\n%s' % (cmd, child.before))
 
+    # если все гуд, будет предложено сохранить в базу ЦУ
+    i = child.expect(['1 out of 1 certificate requests certified, commit?', pexpect.EOF])
+    if i == 0:
+        child.sendline('y')
+    else:
+        raise OpensslCreateCertException(u'Ошибка формирования сертификата:\n%s;\n%s' % (cmd, child.before))
+    child.expect(pexpect.EOF)
 
     # считаем сертификат в переменную
     cert_file = open(cert_path, "r")
