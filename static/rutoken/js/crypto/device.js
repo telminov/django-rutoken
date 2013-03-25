@@ -245,6 +245,52 @@ CryptoDevice.prototype = {
         }
     },
 
+
+    /**
+     * импорт сертификата на стройство
+     * @param certPem текст, который должен содержать "-----BEGIN CERTIFICATE-----", pem-код сертификата, "-----END CERTIFICATE-----"
+     * @param resultCallback - обработчик успешного импорта. В него передается объект инициализированного сертификата.
+     * @param errorCallback
+     * @param category - Тип сертификата: "user", "other" или "CA". По-умолчанию "user".
+     */
+    importCertificate: function(certPem, resultCallback, errorCallback, category) {
+        category = category || 'user';
+
+        var device = this;
+
+        var categoryCodes = {
+            user: this.plugin.pluginObject['CERT_CATEGORY_USER'],
+            ca: this.plugin.pluginObject['CERT_CATEGORY_CA'],
+            other: this.plugin.pluginObject['CERT_CATEGORY_OTHER']
+        };
+        var categoryCode = categoryCodes[category];
+
+        device.plugin.pluginObject.importCertificate(
+            device.id,
+            certPem,
+            categoryCode,
+            importHandler,
+            errorCallback
+        );
+
+        function importHandler(certID) {
+            device.certs.push(
+                new CryptoCert({
+                    id: certID,
+                    deviceID: device.id,
+                    category: category,
+                    plugin: device.plugin,
+                    initResultCallback: certInitHandler,
+                    initErrorCallback: errorCallback
+                })
+            )
+        }
+
+        function certInitHandler(cert) {
+            resultCallback(cert);
+        }
+    },
+
     /**
      * @returns {Array} - список всех сертификатов на устройстве
      */

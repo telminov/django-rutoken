@@ -138,15 +138,20 @@ $(function(){
                 function submitHandler(event) {
                     event.preventDefault();
 
-                    //TODO: реализовать испорт сертификата на устройство
-//                    popup.close();
-//
-//                    // обновим значение текста запроса в форме
-//                    var pem = pemText.val();
-//                    $('#id_pem_text').val(pem);
-//
-//                    // установим фокус на сохранение формы
-//                    $('input[type=submit][name=_save]').focus();
+                    var device = crypto_ui.plugin.getDeviceByID(devicesSelect.val());
+                    var certPem = pemText.val();
+
+                    device.importCertificate(
+                        certPem,
+                        importCallback,
+                        function(errorCode) {
+                            crypto_ui.errorCallback(errorCode)
+                        }
+                    );
+
+                    function importCallback(cert) {
+                        popup.close();
+                    }
                 }
 
 
