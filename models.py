@@ -6,7 +6,7 @@ class CertificateRequest(models.Model):
     """
         Запрос на сертификат
     """
-    user = models.ForeignKey(AuthUser, verbose_name=u'Пользователь', null=True, related_name='cert_requests', help_text=u'Пользователь с которым может быть связан сертификат')
+    user = models.ForeignKey(AuthUser, verbose_name=u'Пользователь', null=True, related_name='cert_requests', on_delete=models.SET_NULL, help_text=u'Пользователь с которым может быть связан сертификат')
 
     country = models.CharField(max_length=2, verbose_name=u'Страна', default='RU', help_text=u'Двухбуквенный код страны')
     state = models.CharField(max_length=100, verbose_name=u'Область', default='Moscow', help_text=u'Область или регион')
@@ -46,7 +46,7 @@ class Certificate(models.Model):
     serial_number = models.IntegerField(unique=True, verbose_name=u'Серийный номер', help_text=u'Серийны номер сертификата. Уникален в пределах удостоверяющего центра')
 
     request = models.OneToOneField(CertificateRequest, verbose_name=u'Запрос', null=True, related_name='certificate', help_text=u'Запрос на сертификат')
-    user = models.ForeignKey(AuthUser, verbose_name=u'Пользователь', null=True, related_name='certificates', help_text=u'Пользователь с которым может быть связан сертификат')
+    user = models.ForeignKey(AuthUser, verbose_name=u'Пользователь', null=True, related_name='certificates', on_delete=models.SET_NULL, help_text=u'Пользователь с которым может быть связан сертификат')
 
     pem_text = models.TextField(verbose_name=u'Тело сертификата', help_text=u'Текст сертификата в формате PEM', blank=True)
     pem_file = models.FileField(upload_to='rutoken/certs', verbose_name=u'PEM', editable=False, null=True, help_text=u'Файл сертификата в формате PEM')
