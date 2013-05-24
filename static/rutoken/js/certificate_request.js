@@ -67,7 +67,7 @@ $(function (){
                 submitBtn.attr('disabled', 'disabled');
 
                 // запросим инфу по устройствам
-                var crypto_ui = new CryptoUI({
+                crypto_ui = new CryptoUI({
                     createPluginObject: true,
                     contentBox: form,
                     devicesSelect: devicesSelect,
@@ -133,6 +133,7 @@ $(function (){
                     addKeyBtn.removeAttr('disabled');
 
                     if (keys.length) {
+                        console.log("Ставим обработчики");
                         pemText.removeAttr('disabled');
                         genRequestBtn.removeAttr('disabled');
                         genRequestBtn.focus();
@@ -151,6 +152,7 @@ $(function (){
                  * и заполняет текстовое поле полученным кодом PEM-запроса
                  */
                 function generateRequest() {
+                    console.log('kalabanga!');
                     var subject = [];
                     var subjectFieldMap = {
                         countryName: '#id_country',
@@ -187,6 +189,10 @@ $(function (){
                     };
 
                     var device = crypto_ui.plugin.getDeviceByID(devicesSelect.val());
+                    var request_pem_text = crypto_ui.plugin.pluginObject.createPkcs10(device.id, keysSelect.val(), subject, extensions,false, requestHandler, errorHandler);
+                    pemText.text(request_pem_text);
+                    console.log(device.keys, keysSelect.val());
+
                     var key = device.getKeyByID(keysSelect.val());
                     key.createRequest(
                         subject,
