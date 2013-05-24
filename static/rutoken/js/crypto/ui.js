@@ -29,6 +29,15 @@ function CryptoUI(param) {
 CryptoUI.prototype = {
 
     /**
+     * Очищает keysSelect и ставит message
+     * @param message - сообщение, которое будет отображено в keysSelect
+     */
+    clearKeyList: function(message) {
+        this.keysSelect.find("option").remove();
+        if (message) this.keysSelect.append($("<option>").text(message));
+    },
+
+    /**
      * Обновляет список устройств.
      * @param resultCallback - обработчик окончания обновления списка устройств
      * @param devicesSelect - селектор списка ключей
@@ -118,6 +127,46 @@ CryptoUI.prototype = {
         function errorCallback (errorCode) {
             ui.errorCallback(errorCode)
         }
+    },
+    refreshCallback: function(keys, keysSelect){
+    // обновим список ключей
+    keysSelect.find('option').remove();
+    $.each(keys, function(i, key){
+        var option_html = '<option value="'+ key.id +'">'+ key.label +'</option>';
+        keysSelect.append(option_html);
+    });
+
+},
+    /**
+     * Обновляет список ключей на странице.
+     * @param deviceID - id используемого устройства
+     * @param marker - метка ключа
+     * @param callback - вызов по окончании операции (отрытие disable кнопок).
+     */
+    enumerateKeys: function(deviceId, marker, callback) {
+        var ui=this;
+        keysSelect = ui.keysSelect;
+        ui.clearKeyList("Список ключевых пар обновляется...");
+        console.log("Обновляем");
+        marker = (marker === undefined) ? "" : marker;
+        deviceId = (deviceId === undefined) ? ui.device() : deviceId;
+        ui.plugin.pluginObject.enumerateKeys(deviceId, marker, $.proxy(function(keys) {
+            if (keys.length == 0) {
+                ui.clearKeyList("");
+                keysSelect.append("<option>Нет ключевых пар</option>");
+                return;
+            }
+            ui.clearKeyList("");
+            for (var k in keys) {
+                keysSelect.append("<option>" + keys[k].toString()+ "</option>");
+            }
+            callback(keys);
+        }, this), function(errorCode) {
+            if (errorCode == ui.plugin.errorCodes.USER_NOT_LOGGED_IN)
+                ui.clearKeyList(ui.plugin.errorDescription[errorCode]);
+            else
+                alert(errorCode);
+        });
     },
 
     /**
