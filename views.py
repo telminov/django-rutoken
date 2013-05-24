@@ -3,7 +3,7 @@ from django.http import HttpResponseRedirect
 from django.conf import settings
 from django.shortcuts import render
 from django.template.response import TemplateResponse
-from django.utils.http import is_safe_url
+# from django.utils.http import is_safe_url
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.debug import sensitive_post_parameters
@@ -36,8 +36,8 @@ def login(request, template_name='rutoken/login.html',
         form = authentication_form(data=request.POST, request=request)
         if form.is_valid():
             # Ensure the user-originating redirection url is safe.
-            if not is_safe_url(url=redirect_to, host=request.get_host()):
-                redirect_to = settings.LOGIN_REDIRECT_URL
+            # if not is_safe_url(url=redirect_to, host=request.get_host()):
+            #     redirect_to = settings.LOGIN_REDIRECT_URL
 
             # Okay, security check complete. Log the user in.
             auth_login(request, form.get_user())
@@ -70,7 +70,10 @@ def login(request, template_name='rutoken/login.html',
 
 
 def pem_request_popup(request):
-    return render(request, 'rutoken/pem_request_popup.html')
+    c = {
+        'form': LoginForm()
+    }
+    return render(request, 'rutoken/pem_request_popup.html', c)
 
 def pem_cert_popup(request):
     return render(request, 'rutoken/pem_cert_popup.html')

@@ -74,6 +74,8 @@ $(function (){
                     keysSelect: keysSelect
                 });
                 crypto_ui.refreshDevices(devicesRefreshCallback);
+                // Выведет в keysSelect сообщение о том, что нужно залогиниться
+                crypto_ui.enumerateKeys(devicesSelect.val(), "");
 
 
                 /**
@@ -120,7 +122,7 @@ $(function (){
                  * обработчик успешного входа
                  */
                 function loginCallback() {
-                    crypto_ui.refreshKeys(devicesSelect.val(), keysRefreshCallback);
+                    crypto_ui.enumerateKeys(devicesSelect.val(), "", keysRefreshCallback);
                 }
 
                 /**
