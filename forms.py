@@ -145,20 +145,6 @@ class CertificateRequest(forms.ModelForm):
         return cleaned_data
 
 
-    def save(self, *args, **kwargs):
-        cert_request = super(CertificateRequest, self).save(*args, **kwargs)
-
-        # создадим файл с запросом
-        if cert_request.pem_text:
-            cert_request.pem_file.save('%s.pem' % cert_request.id, ContentFile(cert_request.pem_text.encode('utf-8')))
-        # или удалим его, если текст запроса был удален
-        elif cert_request.pem_file:
-            cert_request.pem_file.delete()
-
-        return cert_request
-
-
-
 class Certificate(forms.ModelForm):
     serial_number = forms.IntegerField(label=u'Серийный номер', required=False)
     request = forms.ModelChoiceField(
@@ -217,6 +203,7 @@ class Certificate(forms.ModelForm):
         cert_request = cleaned_data.get('request')
         if cert_request:
             try:
+                print cert_request.pem_file.path, cert_request.pem_file
                 cert_text = openssl.create_cert(cert_request.pem_file.path)
                 serial_number = re.search(r'Serial Number: (\d+)', cert_text).group(1)
 
@@ -228,12 +215,8 @@ class Certificate(forms.ModelForm):
 
         return cleaned_data
 
-
     def save(self, *args, **kwargs):
         self.instance.serial_number = self.cleaned_data['serial_number']
         self.instance.pem_text = self.cleaned_data['pem_text']
-
         cert = super(Certificate, self).save(*args, **kwargs)
-
-        cert.pem_file.save('%s.pem' % cert.id, ContentFile(cert.pem_text.encode('utf-8')))
         return cert

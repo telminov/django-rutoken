@@ -39,7 +39,7 @@
     1.2 Настройка openssl.cnf:
         скопируйте openssl.cnf.sample в openssl.cnf
         замените в секции CA_default значение параметра dir "/YOUR_PROJECT_DIR/rutoken/pki_ca" на путь к диерктории pki_ca
-        замените в секции req_distinguished_name значение параметра 0.organizationName_default "YOUR_ORG_NAME" на название вашей организации
+            замените в секции req_distinguished_name значение параметра 0.organizationName_default "YOUR_ORG_NAME" на название вашей организации
 
     1.3 Создайте сертификат УЦ:
         pki_ca $ openssl req -config openssl.cnf -new -x509 -keyout private/cakey.pem -out cacert.pem -days 3650

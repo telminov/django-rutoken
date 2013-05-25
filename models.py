@@ -1,6 +1,7 @@
 # coding: utf-8
 from django.db import models
 from django.contrib.auth.models import User as AuthUser
+from django.core.files.base import ContentFile
 
 class CertificateRequest(models.Model):
     """
@@ -39,6 +40,7 @@ class CertificateRequest(models.Model):
     def __unicode__(self):
         return u'%s от %s' % (self.common_name, self.dc.date())
 
+
 class Certificate(models.Model):
     """
         Сертификат
@@ -61,6 +63,7 @@ class Certificate(models.Model):
         verbose_name = u'Сертификат'
         verbose_name_plural = u'Сертификаты'
         ordering = ('-dc', )
+
 
     def __unicode__(self):
         return u'%s' % (self.serial_number,)
