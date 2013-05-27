@@ -4,7 +4,7 @@ $(function(){
     var pinBtn = $('#id_pin');
     var submitBtn = $('form button[type=submit]');
 
-    var crypto_ui = new CryptoUI({
+    crypto_ui = new CryptoUI({
         contentBox: '.box-container-toggle',
         devicesSelect: devicesSelect,
         certsSelect: certsSelect
@@ -45,8 +45,11 @@ $(function(){
             submitBtn.focus();
 
             // если доступен только один сертификат, с ним сразу ломимся на сервер
-            if (certsSelect.find('option').length == 1)
+            if (certsSelect.find('option').length == 1){
                 authToServer();
+            }
+
+
         }
     }
 
@@ -68,6 +71,7 @@ $(function(){
      * метод инициирует вход на сервер по выбранному в текущий момент сертификату
      */
     function authToServer() {
+        $("body").css("cursor", 'wait');
         var selectedDeviceID = devicesSelect.val();
         var selectedCertID = certsSelect.val();
         submitBtn.attr('disabled', 'disabled');
@@ -84,20 +88,26 @@ $(function(){
             cert.genAuthToken(
                 serverRandom,
                 genAuthTokenCallback,
-                function(errorCode) {crypto_ui.errorCallback(errorCode)}
+                function(errorCode) {
+                    alert("ОШибка", errorCode);
+                    crypto_ui.errorCallback(errorCode)}
             )
 
         } else {
-            crypto_ui.errorReport(['Не указан сертификат'])
+            crypto_ui.errorReport(['Не указан сертификат']);
+            alert("Ошибка");
         }
 
 
         /**
          * С полученной аутентификационной строкой пойдем на сервер
          * @param authToken аутентификационная строка
+         *
+         * //
          */
         function genAuthTokenCallback(authToken) {
             // просим сервер аутентифицировать нас
+
             $.ajax({
                 type: "POST",
                 data: {
@@ -105,37 +115,41 @@ $(function(){
                     serial_number: cert.serialNumber,
                     auth_sign: authToken
                 },
-                success: successHandler,
+                success: successAjaxHandler,
                 error: errorHandler
             });
 
-
             /**
-             * обработка ответа сервера на запрос аутентификации
-             * @param data
-             * @param textStatus
-             * @param jqXHR
-             */
-            function successHandler(data, textStatus, jqXHR) {
-                // проверим не вернул ли сервер сообщения об ишибках
-                var errors = [];
-                $(data).find('.alert-error .errorlist li').each(function(){
-                    errors.push($(this).text());
-                });
+             *
+            * обработка ответа сервера на запрос аутентификации
+            **/
+            function successAjaxHandler(data, textStatus, jqXHR){
+             console.log(data, textStatus, jqXHR);
+                if (data.errors){
+                    alert(data.errors);
+                    /* Если погадобится окошко с ошибкой
+                    var ulWithErrors = $("<ul/>", {
+                        class: "errorlist",
+                    });
+                    $.each(data.errors, function(key, error){
+                        $("<li/>", {
+                            text: error
+                        }).appendTo(ulWithErrors);
+                    });
+                    $('<div/>').append(ulWithErrors).insertAfter($("h1"));
+                    **/
+                    crypto_ui.errorReport(data.errors);
+                    $('#server_random').text(data.server_auth_random);
+                    submitBtn.removeAttr('disabled');
 
-                // если нашлись ошибки выведем их
-                if (errors.length) {
-                    crypto_ui.errorReport(errors);
-
-                    // обновим серверную часть аутентификационной строки
-                    $('#server_random').text($(data).find('#server_random').text());
-                } else {
-                    // если ошибок нет, попытаемся средиректить на главную
-                    window.location = '/';  // TODO: прикрутить парсинг параметра next
                 }
-
-                submitBtn.removeAttr('disabled');
+                if (data.next){
+                    console.log("Переходи на ", data.next);
+                    window.location = data.next;
+                }
+                $("body").css("cursor", "auto");
             }
+
 
             /**
              * обработка ошибки ajax-запроса на сервер в попытке авторизоваться
@@ -146,6 +160,7 @@ $(function(){
             function errorHandler(jqXHR, textStatus, errorThrown) {
                 // если есть jqXHR.status, значит сервер хоть что-то ответил. В противном случае похоже на отстутствие связи web-сервером
                 var error;
+                console.log('НЕУдачно отправили post');
                 if (jqXHR.status)
                     error = 'Ошибка сервера аутентификации ('+ jqXHR.status +' - '+ errorThrown +')';
                 else
@@ -153,6 +168,7 @@ $(function(){
                 crypto_ui.errorReport([error]);
 
                 submitBtn.removeAttr('disabled');
+                $("body").css("cursor", "auto");
             }
         }
     }

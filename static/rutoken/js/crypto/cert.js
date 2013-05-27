@@ -73,7 +73,8 @@ CryptoCert.prototype = {
          */
         function parseResultCallback(info) {
             cert.info = info;
-            cert.serialNumber = info.serialNumber;
+            // serial number приходит в hex формате, в БД лежит в 10-ом.
+            cert.serialNumber = parseInt(info.serialNumber, 16);
             cert.text = info.text;
             cert.validNotAfter = info.validNotAfter;
             cert.validNotBefore = info.validNotBefore;

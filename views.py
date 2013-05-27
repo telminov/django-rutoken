@@ -1,5 +1,5 @@
 # coding: utf-8
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from django.conf import settings
 from django.shortcuts import render
 from django.template.response import TemplateResponse
@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.debug import sensitive_post_parameters
 from django.contrib.auth import REDIRECT_FIELD_NAME, login as auth_login
 from django.contrib.sites.models import get_current_site
+from django.utils import simplejson
 
 from rutoken.forms import Login as LoginForm
 
@@ -38,17 +39,21 @@ def login(request, template_name='rutoken/login.html',
             # Ensure the user-originating redirection url is safe.
             # if not is_safe_url(url=redirect_to, host=request.get_host()):
             #     redirect_to = settings.LOGIN_REDIRECT_URL
-
-            # Okay, security check complete. Log the user in.
             auth_login(request, form.get_user())
-
             if request.session.test_cookie_worked():
                 request.session.delete_test_cookie()
-
             if logger:
                 logger.info(u'User "%s" login.' % request.user)
+            return HttpResponse(simplejson.dumps({"next": "/lmk"}), mimetype='application/json')
 
-            return HttpResponseRedirect(redirect_to)
+        else:
+            # Нужно вернуть ошибки в формате json и новую server_auth_random
+            form.gen_server_auth_random()
+            return HttpResponse(simplejson.dumps(
+                {
+                    "errors": ["Не найдено сертификата на сервере"],
+                    "server_auth_random": form.server_auth_random
+                }), mimetype=u"application/json")
     else:
         form = authentication_form(request)
 

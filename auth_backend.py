@@ -18,7 +18,10 @@ class AuthBackend(ModelBackend):
 
             Возвращает пользователя, которому принадлежит сертификат
         """
-        cert = models.Certificate.objects.get(serial_number=cert_serial_number, user__isnull=False, dd__isnull=True)
+        try:
+            cert = models.Certificate.objects.get(serial_number=cert_serial_number, user__isnull=False, dd__isnull=True)
+        except models.Certificate.DoesNotExist:
+            return None
 
         # расшифруем уатентификационную строку
         auth_result = openssl.verify_auth(cert.pem_file.path, auth_sign)
