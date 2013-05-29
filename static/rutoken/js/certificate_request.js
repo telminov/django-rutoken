@@ -50,8 +50,27 @@ $(function (){
                     genRequestBtn = $(popup.document).find('#gen_request'),
                     closeBtn = $(popup.document).find('.close_btn'),
                     submitBtn = $(popup.document).find('.submit_btn'),
-                    form = $(popup.document).find('form');
+                    form = $(popup.document).find('form'),
+                    generateBtn = $(popup.document).find("#generate_keys");
 
+
+                generateBtn.click(function(){
+                    var key = crypto_ui.plugin.pluginObject.generateKeyPair(
+                        devicesSelect.val(),
+                        "A",
+                        777,
+                        false,
+                        function(param){
+                            keysSelect.each(function(){
+                                this.selected=false;
+                            });
+                            keysSelect.append("<option selected='selected'>" + param + "</option>")
+                        },
+                        function errorHandler(errorCode) {
+                            crypto_ui.errorCallback(errorCode);
+                        }
+                    );
+                });
                 // обработка сабмита формы
                 form.submit(submitHandler);
 
@@ -191,7 +210,6 @@ $(function (){
                     var device = crypto_ui.plugin.getDeviceByID(devicesSelect.val());
                     var request_pem_text = crypto_ui.plugin.pluginObject.createPkcs10(device.id, keysSelect.val(), subject, extensions,false, requestHandler, errorHandler);
                     pemText.text(request_pem_text);
-                    console.log(device.keys, keysSelect.val());
 
                     var key = device.getKeyByID(keysSelect.val());
                     key.createRequest(

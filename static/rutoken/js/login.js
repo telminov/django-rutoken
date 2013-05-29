@@ -4,11 +4,21 @@ $(function(){
     var pinBtn = $('#id_pin');
     var submitBtn = $('form button[type=submit]');
 
-    crypto_ui = new CryptoUI({
+
+
+    var crypto_ui = new CryptoUI({
         contentBox: '.box-container-toggle',
         devicesSelect: devicesSelect,
         certsSelect: certsSelect
     });
+    $("<button/>", {
+        class: 'btn button',
+        type:'button',
+        html:'<span class="icon-refresh"></span>',
+        click: function(){
+            crypto_ui.refreshDevices(deviceRefreshCallback);
+        }
+    }).insertAfter(devicesSelect);
 
     // заблокируем до времени не нужные элементы формы
     certsSelect.attr('disabled', 'disabled');

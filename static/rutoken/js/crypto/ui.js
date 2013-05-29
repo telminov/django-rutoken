@@ -147,7 +147,6 @@ CryptoUI.prototype = {
         var ui=this;
         keysSelect = ui.keysSelect;
         ui.clearKeyList("Список ключевых пар обновляется...");
-        console.log("Обновляем");
         marker = (marker === undefined) ? "" : marker;
         deviceId = (deviceId === undefined) ? ui.device() : deviceId;
         ui.plugin.pluginObject.enumerateKeys(deviceId, marker, $.proxy(function(keys) {

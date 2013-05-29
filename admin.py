@@ -12,7 +12,6 @@ class CertificateRequest(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         obj.save()
-        obj.user = request.user
         # После сохранения pem_file.save() instance.save() делается еще раз.
         obj.pem_file.save("%s.pem" % obj.id, ContentFile(obj.pem_text.encode('utf-8')))
 
@@ -32,7 +31,6 @@ class Certificate(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         obj.save()
-        obj.user = request.user
         obj.pem_file.save('%s.pem' % obj.id, ContentFile(obj.pem_text.encode('utf-8')))
 
     def delete_model(self, request, obj):
