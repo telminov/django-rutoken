@@ -10,10 +10,13 @@ $(function (){
      */
     function prepareInputChangeHandler(){
         $('input[type=text]').change(function(){
-            $('.pem_text').val('');
+            if ($("#id_pem_text").val()){
+                $('.pem_text').val('');
+                alert("Текст запроса очищен, так как предшествующие данные должны быть неизменными.\n" +
+                    "После заполнения полей до окончательного варианта сгенерируйте запрос еще раз")
+            }
         })
     }
-
 
     /**
      * функция навешивает на форму логику генерации запросов на сертификат
@@ -31,6 +34,12 @@ $(function (){
          * вся логика генерации pem-кода запроса в отдельном окне
          */
         function openPopup() {
+            // Проверяем только 2 поля на заполнение, остальные заполняются из конфига.
+            if (!$("#id_common_name").val() || !$("#id_user").val()){
+                alert("Заполните пожалуйста все обязательные поля");
+                return;
+            }
+
             var popup = window.open(URL_PEM_REQUEST_POPUP, '', 'width=1000,height=500');
             popup.onload = popupLoadHandler;
 
@@ -50,11 +59,10 @@ $(function (){
                     genRequestBtn = $(popup.document).find('#gen_request'),
                     closeBtn = $(popup.document).find('.close_btn'),
                     submitBtn = $(popup.document).find('.submit_btn'),
-                    form = $(popup.document).find('form'),
-                    generateBtn = $(popup.document).find("#generate_keys");
+                    form = $(popup.document).find('form');
 
 
-                generateBtn.click(function(){
+                addKeyBtn.click(function(){
                     var key = crypto_ui.plugin.pluginObject.generateKeyPair(
                         devicesSelect.val(),
                         "A",
@@ -152,7 +160,6 @@ $(function (){
                     addKeyBtn.removeAttr('disabled');
 
                     if (keys.length) {
-                        console.log("Ставим обработчики");
                         pemText.removeAttr('disabled');
                         genRequestBtn.removeAttr('disabled');
                         genRequestBtn.focus();
