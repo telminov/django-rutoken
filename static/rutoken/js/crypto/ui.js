@@ -72,7 +72,9 @@ CryptoUI.prototype = {
             // обновим список сертификатов, если задан селектор сертификатов и обнаружены устройства
             if (ui.certsSelect.length && devices.length) {
                 ui.certsSelect.find('option').remove();
-                $.each(devices[0].getAllCerts(), function(i, cert) {
+
+                var device = ui.plugin.devices[ui.devicesSelect.val()];
+                $.each(device.getAllCerts(), function(i, cert) {
                     var option_html = '<option value="'+ cert.id +'">'+ cert.getLabel() +'</option>';
                     ui.certsSelect.append(option_html);
                 })
@@ -274,6 +276,10 @@ CryptoUI.prototype = {
     errorReport: function(errors, contentBox) {
         contentBox = contentBox || this.contentBox;
         _report(contentBox, errors, 'error');
+    },
+
+    clearErrorReport: function(){
+        this.contentBox.find('.alert').remove();
     },
 
     /**

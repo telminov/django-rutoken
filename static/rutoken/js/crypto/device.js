@@ -7,10 +7,12 @@
  *      initErrorCallback - обработчик ошибок инициализации устройства.
  * @constructor
  */
+
+
 function CryptoDevice(param) {
     this.id = param.id;
     this.plugin = param.plugin;
-
+    this.certs = {'user': [], 'ca': [], 'other': []};
     this._init(param.initResultCallback, param.initErrorCallback);
 }
 CryptoDevice.prototype = {
@@ -51,7 +53,6 @@ CryptoDevice.prototype = {
      */
     _init: function(resultCallback, errorCallback) {
         var device = this;
-
         // label
         this.plugin.pluginObject.getDeviceLabel(
             device.id,
@@ -127,14 +128,13 @@ CryptoDevice.prototype = {
             },
             errorCallback
         );
-
         /**
          * функция устанавливает список объектов сертификатов по заданной категории на объект устройства
          * @param certs - массив строк с идентификаторами сертификатов
          * @param category - категория сертификата ("user", "other" или "ca")
          */
         function setCerts(certs, category) {
-            device.certs[category] = [];
+//            device.certs[category] = [];
 
             for (var i=0; i < certs.length; i++) {
                 var cert = new CryptoCert({
@@ -145,12 +145,15 @@ CryptoDevice.prototype = {
                     initErrorCallback: errorCallback,
                     initResultCallback: function() {
                         // по окончании инициализации сертификата проверим не оконченали теперь инцииализация устройства в целом
+                        console.log("category=", category);
                         checkReady();
                     }
                 });
                 // добавим созданный, но еще не окончевший инициализации сертификат
                 device.certs[category].push(cert);
+
             }
+            console.log("device.certs", device.id, device.certs);
         }
 
         /**
@@ -158,7 +161,10 @@ CryptoDevice.prototype = {
          */
         function checkReady() {
             if (resultCallback && device.is_inited())
+            {
+                // Вызываем plugin.checkAllDevicesReady(Device)
                 resultCallback(device);
+            }
         }
     },
 

@@ -4,10 +4,22 @@ $(function(){
     var pinBtn = $('#id_pin');
     var submitBtn = $('form button[type=submit]');
 
-
+    function toggleButtons(state){
+        switch (state){
+            case "openPin":
+                pinBtn.removeAttr('disabled');
+                submitBtn.attr('disabled','disabled');
+                break;
+            case "openSubmit":
+                pinBtn.attr('disabled', 'disabled');
+                submitBtn.removeAttr('disabled');
+                break;
+        }
+    }
 
     var crypto_ui = new CryptoUI({
-        contentBox: '.box-container-toggle',
+//        contentBox: '.box-container-toggle',
+        contentBox: $("form"),
         devicesSelect: devicesSelect,
         certsSelect: certsSelect
     });
@@ -21,7 +33,6 @@ $(function(){
     }).insertAfter(devicesSelect);
 
     // заблокируем до времени не нужные элементы формы
-    certsSelect.attr('disabled', 'disabled');
     pinBtn.attr('disabled', 'disabled');
     submitBtn.attr('disabled', 'disabled');
 
@@ -30,6 +41,19 @@ $(function(){
 
     crypto_ui.refreshDevices(deviceRefreshCallback);
 
+    $("#id_devices").change(function(i,val){
+        console.log("Change handler!!!");
+        var ui = crypto_ui;
+        ui.certsSelect.find('option').remove();
+
+        var device = ui.plugin.devices[ui.devicesSelect.val()];
+        $.each(device.getAllCerts(), function(i, cert) {
+            var option_html = '<option value="'+ cert.id +'">'+ cert.getLabel() +'</option>';
+            ui.certsSelect.append(option_html);
+        });
+        toggleButtons('openPin');
+        crypto_ui.clearErrorReport();
+    });
 
 
     /**
@@ -44,10 +68,11 @@ $(function(){
 
         function pinSuccessCallback(){
             // заблокируем ввод пина чтобы не отвлекать пользователя
-            pinBtn.attr('disabled', 'disabled');
+//            pinBtn.attr('disabled', 'disabled');
 
             // вешаем обработчик аутентификции на сервере
-            submitBtn.removeAttr('disabled');
+//            submitBtn.removeAttr('disabled');
+            toggleButtons("openSubmit");
             submitBtn.click(function (event) {
                 event.preventDefault();
                 authToServer();
@@ -71,9 +96,10 @@ $(function(){
 
         if (!selectedDeviceID) return;  // если не оказалось устройств
 
-        pinBtn.removeAttr('disabled');
-        certsSelect.removeAttr('disabled');
+        toggleButtons("openPin");
         pinBtn.focus();
+        crypto_ui.clearErrorReport();
+
     }
 
 
@@ -99,13 +125,13 @@ $(function(){
                 serverRandom,
                 genAuthTokenCallback,
                 function(errorCode) {
-                    alert("ОШибка", errorCode);
-                    crypto_ui.errorCallback(errorCode)}
+                    crypto_ui.errorCallback(errorCode);
+                    toggleButtons("openSubmit");
+                }
             )
 
         } else {
             crypto_ui.errorReport(['Не указан сертификат']);
-            alert("Ошибка");
         }
 
 
@@ -150,7 +176,8 @@ $(function(){
                     **/
                     crypto_ui.errorReport(data.errors);
                     $('#server_random').text(data.server_auth_random);
-                    submitBtn.removeAttr('disabled');
+                    toggleButtons('openSubmit');
+//                    submitBtn.removeAttr('disabled');
 
                 }
                 if (data.next){
@@ -176,8 +203,7 @@ $(function(){
                 else
                     error = 'Сервер не отвечает';
                 crypto_ui.errorReport([error]);
-
-                submitBtn.removeAttr('disabled');
+                toggleButtons('openSubmit');
                 $("body").css("cursor", "auto");
             }
         }

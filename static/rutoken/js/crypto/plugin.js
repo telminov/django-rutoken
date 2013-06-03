@@ -76,9 +76,11 @@ CryptoPlugin.prototype = {
         // функция вызывает загрузку объектов устройств
         function enumerateCallback(deviceIDs) {
             // если есть устройства подгрузим данные по ним
+//            console.log("EnumerateCallback");
             if (deviceIDs.length)
                 $.each(deviceIDs, function (i, deviceID) {
                     // создадим устройство, при этом будет запущена подгрузка данных по нему
+//                    console.log("Создаем CryptoDevice");
                     devicesHash[deviceID] = new CryptoDevice({
                         id: deviceID,
                         plugin: plugin,
@@ -88,8 +90,8 @@ CryptoPlugin.prototype = {
                 });
 
             // если устройств нет сразу вызываем обработчик готовности
-            else
-                checkAllDevicesReady();
+//            else
+//                checkAllDevicesReady();
         }
 
 
@@ -97,9 +99,9 @@ CryptoPlugin.prototype = {
          * Функция проверяет вся ли инфа об устроствах загружена.
          * Как только загрузка завершена, вызывается колбек
          */
-        function checkAllDevicesReady() {
+        function checkAllDevicesReady(device) {
             var allReady = true;
-
+            console.log("checkAllDevicesReady", "| device=", device,"device.certs=",device.certs);
             // сбросим флаг если хоть одно из устройств еще не прогрузилось
             $.each(devicesHash, function (i, device) {
                 if (!device.is_inited()) allReady = false;
@@ -116,7 +118,7 @@ CryptoPlugin.prototype = {
                 }
                 plugin.devices = devices.sort(function(a,b){ return Number(a.id) - Number(b.id) });
 
-                // обработчик окончания обновления списка устройств
+                // обработчик окончания обновления списка устройств // Метод ui.refreshCallback
                 resultCallback(plugin.devices)
             }
         }
