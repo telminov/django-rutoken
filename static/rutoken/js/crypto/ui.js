@@ -155,6 +155,7 @@ CryptoUI.prototype = {
             if (keys.length == 0) {
                 ui.clearKeyList("");
                 keysSelect.append("<option>Нет ключевых пар</option>");
+                callback(keys);
                 return;
             }
             ui.clearKeyList("");

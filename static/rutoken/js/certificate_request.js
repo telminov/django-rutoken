@@ -63,16 +63,19 @@ $(function (){
 
 
                 addKeyBtn.click(function(){
+                    console.log(devicesSelect.val());
                     var key = crypto_ui.plugin.pluginObject.generateKeyPair(
                         devicesSelect.val(),
                         "A",
                         777,
                         false,
-                        function(param){
+                        function(key){
                             keysSelect.each(function(){
                                 this.selected=false;
                             });
-                            keysSelect.append("<option selected='selected'>" + param + "</option>")
+                            keysSelect.append("<option selected='selected'>" + key + "</option>");
+                            console.log(key);
+                            keysRefreshCallback([key]);
                         },
                         function errorHandler(errorCode) {
                             crypto_ui.errorCallback(errorCode);
@@ -130,15 +133,17 @@ $(function (){
                     if (device.is_login) {
                         // заблокируем кнопку логина, чтоб не отвлекала пользователя
                         showPinBtn.attr('disabled', 'disabled');
-
+                        addKeyBtn.removeAttr('disabled');
                         // обновим список ключей
                         crypto_ui.refreshKeys(devicesSelect.val(), keysRefreshCallback);
 
                     // если на устройстве еще не залогинены предоставим возможность залогинится
                     } else {
+
                         showPinBtn.click(function(){
                             loginInSelectedDevice(devicesSelect, pinGroup, pinInput, loginBtn, showPinBtn, popup, crypto_ui, loginCallback)
                         });
+                        addKeyBtn.attr('disabled', 'disabled');
                         showPinBtn.removeAttr('disabled');
                         showPinBtn.focus();
                     }

@@ -140,7 +140,7 @@ $(function(){
 
                     var device = crypto_ui.plugin.getDeviceByID(devicesSelect.val());
                     var certPem = pemText.val();
-
+                    console.log("device=", device);
                     device.importCertificate(
                         certPem,
                         importCallback,
