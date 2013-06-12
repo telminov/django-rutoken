@@ -4,7 +4,6 @@ $(function(){
     prepareForm();
 
 
-
     /**
      * функция определяет доступность полей формы
      */
@@ -15,6 +14,15 @@ $(function(){
         if (isNew) {
             $('#id_serial_number, #id_pem_text').attr('disabled','disabled');
             $('#id_request').focus();
+            $('#id_request').change(function(event){
+                if ($(this).val()){
+                    $.getJSON("/rutoken/get_user_by_cert_request", {"request_id": $(this).val()}, function(data, textStatus){
+                        $('#id_user').val(data['id']);
+                        $("input[name='_continue']").focus();
+                    });
+
+                }
+            });
 
         // если сертификат существует, предоставим возможность импорта на ключ
         } else {
@@ -28,7 +36,7 @@ $(function(){
     function prepareCertImport() {
         // нарисуем кнопку импорта
         var pemCertText = $('#id_pem_text');
-        var pemImportButton = $('<input type="button" id="pem_text_import_button" value="Импортировать"/>').insertAfter(pemCertText);
+        var pemImportButton = $('<input type="button" id="pem_text_import_button" value="Импортировать"/>').insertAfter(pemCertText).focus();
         // окно импорта
         pemImportButton.click(openPopup);
 

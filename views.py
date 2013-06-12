@@ -1,4 +1,6 @@
 # coding: utf-8
+import json
+
 from django.http import HttpResponseRedirect, HttpResponse
 from django.conf import settings
 from django.shortcuts import render
@@ -12,6 +14,7 @@ from django.contrib.sites.models import get_current_site
 from django.utils import simplejson
 
 from rutoken.forms import Login as LoginForm
+from rutoken.models import CertificateRequest
 
 @sensitive_post_parameters()
 @csrf_protect
@@ -79,3 +82,14 @@ def pem_request_popup(request):
 
 def pem_cert_popup(request):
     return render(request, 'rutoken/pem_cert_popup.html')
+
+
+def get_user_by_cert_request(request):
+    if request.is_ajax():
+        if request.GET.has_key('request_id'):
+            user = CertificateRequest.objects.get(id=request.GET['request_id']).user
+            return HttpResponse(
+                content=json.dumps({'id': user.id}),
+                mimetype='application/json'
+            )
+
