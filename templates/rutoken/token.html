@@ -1,0 +1,76 @@
+{% extends 'admin/base_site.html' %}
+{% block stylesheet %}{{ STATIC_URL }}rutoken/css/base_without_errorlist.css{% endblock %}
+{% block extrahead %}
+    <link href="{{ STATIC_URL }}bootstrap2.3.1/css/bootstrap.min.css" rel='stylesheet' id="main-theme-script">
+    <script src="{{ STATIC_URL }}js/lib/jquery-1.7.2.js"></script>
+    <script src="{{ STATIC_URL }}bootstrap2.3.1/js/bootstrap.min.js"></script>
+    <script src="{{ STATIC_URL }}rutoken/js/crypto/ui.js"></script>
+    <script src="{{ STATIC_URL }}rutoken/js/crypto/plugin.js"></script>
+    <script src="{{ STATIC_URL }}rutoken/js/crypto/device.js"></script>
+    <script src="{{ STATIC_URL }}rutoken/js/crypto/cert.js"></script>
+    <script src="{{ STATIC_URL }}rutoken/js/token_operations.js"></script>
+    <style>
+    .errorlist li {
+        background: none;
+    }
+    ul.errorlist {
+{#        margin: 30px;#}
+    }
+
+    </style>
+{% endblock extrahead %}
+{% block content %}
+    <object type="application/x-rutoken-pki" id="plugin-object" width="0" height="0"></object>
+    <form method="POST" class="well form-search form-horizontal">
+        <div class="control-group">
+            <label class='control-label' for="id_devices">Доступные устройства:</label>
+            <div class="controls">
+                <select id="id_devices" name="devices"></select>
+                <button id="refresh_devices"  class="btn button" type="button"><span class="icon-refresh"></span></button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class='control-label' for="id_certs">Сертификаты на устройстве:</label>
+            <div class="controls">
+                <select id="id_certs" name="certs"></select>
+                <button id="get_key" class="btn button" type="button" disabled="disabled">Ключ сертификата</button>
+                <button id="delete_cerfiticate" class="btn button" type="button" disabled="disabled">Удалить</button>
+                <div id="key_by_current_certificate"></div>
+            </div>
+        </div>
+
+        <div class='control-group'>
+            <label class="control-label" for="keys" >Ключи</label>
+            <div class='controls'>
+                <select id="keys" disabled="disabled"></select>
+                <button id="delete_key" class="btn button" type="button" disabled="disabled">Удалить</button>
+            </div>
+        </div>
+        <div class="control-group">
+            <div class="controls">
+                <button data-toggle="modal" id="id_pin" class="btn btn-success" type="button">PIN-код</button>
+            </div>
+        </div>
+    </form>
+
+
+    <!-- login PIN modal -->
+    <div id="loginPINModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="PIN-код" aria-hidden="true">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            <h3 id="loginPINModalHead"></h3>
+        </div>
+        <div class="modal-body">
+            <p class="row-flow">
+                <label for="id_PIN_input" class="span2">PIN-код</label>
+                <input type="password" id="id_PIN_input" class="span5"/>
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+            <button class="btn btn-primary">Войти</button>
+        </div>
+    </div>
+    <!-- /login PIN modal -->
+{% endblock  %}

@@ -170,6 +170,18 @@ CryptoUI.prototype = {
                 alert(errorCode);
         });
     },
+    deleteKey: function(deviceId, key, callback){
+
+        this.plugin.pluginObject.deleteKeyPair(deviceId, key, callback, this.errorCallback);
+
+    },
+
+    getKeyByCertificate: function(deviceId, certificate, callback){
+        console.log(this, this.plugin);
+        var plugin = this.plugin;
+        console.log(plugin);
+        plugin.pluginObject.getKeyByCertificate(deviceId, certificate, callback, $.proxy(this.errorCallback, this));
+    },
 
     /**
      * логин на устройстве
@@ -289,9 +301,10 @@ CryptoUI.prototype = {
      * @param contentBox - контейнер в который нужно выводить ошибку. Если не задан, будет использован атрибут contentBox объекта
      */
     errorCallback: function(errorCode, contentBox) {
+        console.log(this, errorCode, contentBox);
         var errorMsg = this.plugin.errorDescription[errorCode];
         contentBox = contentBox || this.contentBox;
-
+        console.log(errorMsg, contentBox);
         _report(contentBox, [errorMsg], 'error')
     }
 };

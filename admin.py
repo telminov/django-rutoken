@@ -4,6 +4,8 @@ from django.contrib import admin
 from django.core.files.base import ContentFile
 from rutoken import models
 from rutoken import forms
+from rutoken.views import login, token
+from django.conf.urls import patterns, url
 
 
 class CertificateRequest(admin.ModelAdmin):
@@ -38,3 +40,15 @@ class Certificate(admin.ModelAdmin):
         super(Certificate, self).delete_model(request, obj)
 
 admin.site.register(models.Certificate, Certificate)
+
+
+def extend_get_urls(urls):
+    def wrap():
+
+        url_patterns = patterns('',
+                                url(r'^token/', admin.site.admin_view(token))
+        )
+        return url_patterns + urls
+    return wrap
+
+admin.site.get_urls = extend_get_urls(admin.site.get_urls())
