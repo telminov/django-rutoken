@@ -2,7 +2,11 @@ $(function(){
     var devicesSelect = $('#id_devices');
     var certsSelect = $('#id_certs');
     var keySelect = $("#keys");
+    keySelect.clear = function(){
+        this.find("option").remove();
+    };
     var keyByCertificate = $("#key_by_current_certificate");
+    var keyByCertificateBtn = $("#get_key");
     var pinBtn = $('#id_pin').focus();
     var submitBtn = $('form button[type=submit]');
     keyByCertificate.clear = function(){
@@ -12,13 +16,29 @@ $(function(){
 
     function toggleButtons(state){
         switch (state){
-            case "openPin":
+            case "openPin":{
+                console.log("1");
+                console.log("2");
                 pinBtn.removeAttr('disabled');
-                submitBtn.attr('disabled','disabled');
+
+                deleteCertificateBtn.attr('disabled', 'disabled');
+                keyByCertificateBtn.attr('disabled', 'disabled');
+                keyByCertificate.clear();
+                keySelect.attr('disabled', 'disabled');
+                keySelect.clear();
+                deleteKeyBtn.attr('disabled', 'disabled');
                 break;
-            case "openSubmit":
+            }
+            case "openAll":
+                console.log("3");
+                console.log("4");
                 pinBtn.attr('disabled', 'disabled');
-                submitBtn.removeAttr('disabled');
+
+                deleteCertificateBtn.removeAttr('disabled');
+                keyByCertificate.removeAttr('disabled');
+                keySelect.removeAttr('disabled');
+                deleteKeyBtn.removeAttr('disabled');
+
                 break;
         }
     }
@@ -29,9 +49,11 @@ $(function(){
         certsSelect: certsSelect,
         keysSelect: keySelect
     });
+
     var refreshDevicesBtn = $("#refresh_devices").click(function(){
         crypto_ui.refreshDevices(deviceRefreshCallback);
     });
+
     var getKeyByCertificateBtn = $("#get_key").click(function(){
         crypto_ui.plugin.pluginObject.getKeyByCertificate(devicesSelect.val(), certsSelect.val(), function(keyId){
             $("#key_by_current_certificate").text(keyId);
@@ -51,7 +73,8 @@ $(function(){
 
     var deleteKeyBtn= $("#delete_key").click(function(){
         crypto_ui.deleteKey(devicesSelect.val(), keySelect.val(),  function(keys){
-            crypto_ui.enumerateKeys(deviceId, "", function(keys){
+            crypto_ui.enumerateKeys(devicesSelect.val(),"", function(keys){
+                console.log("keys внутриу deleteKeyBtn", keys);
             });
         });
     }).attr("disabled", 'disabled');
@@ -59,12 +82,12 @@ $(function(){
 
     // заблокируем до времени не нужные элементы формы
     pinBtn.attr('disabled', 'disabled');
-    submitBtn.attr('disabled', 'disabled');
 
     // модальное окно для ввода pin-кода
     pinBtn.click(openPINModal);
 
     crypto_ui.refreshDevices(deviceRefreshCallback);
+//    crypto_ui.refreshDevices(deviceRefreshCallback);
 
     $("#id_devices").change(function(i,val){
         var ui = crypto_ui;
@@ -77,7 +100,15 @@ $(function(){
         });
         toggleButtons('openPin');
         crypto_ui.clearErrorReport();
+        pinBtn.removeAttr('disabled').focus();
+        keysSelect.find('option').remove();
+//        keysSelect.attr('disabled', 'disabled');
+//        deleteCertificateBtn.attr('disabled', 'disabled');
+//        deleteKeyBtn.attr('disabled', 'disabled');
+//        getKeyByCertificateBtn.attr('disabled', 'disabled');
+//        keyByCertificate.clear();
     });
+
 
 
     /**
@@ -94,7 +125,7 @@ $(function(){
             // заблокируем ввод пина чтобы не отвлекать пользователя
 //            pinBtn.attr('disabled', 'disabled');
 
-            toggleButtons("openSubmit");
+            toggleButtons("openAll");
             keySelect.removeAttr("disabled");
             deleteKeyBtn.removeAttr("disabled");
             getKeyByCertificateBtn.removeAttr("disabled");
@@ -111,8 +142,12 @@ $(function(){
      */
     function deviceRefreshCallback() {
         var selectedDeviceID = devicesSelect.val();
-
-        if (!selectedDeviceID) return;  // если не оказалось устройств
+        pinBtn.focus();
+        if (!selectedDeviceID || selectedDeviceID=="Список обновляется..."){ // если не оказалось устройств
+            devicesSelect.append("<option>Нет подключенных устройств</option>");
+            return;
+        }
+        if (!selectedDeviceID) return;
 
         toggleButtons("openPin");
         pinBtn.focus();

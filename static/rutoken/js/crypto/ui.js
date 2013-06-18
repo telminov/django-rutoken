@@ -50,7 +50,6 @@ CryptoUI.prototype = {
         // обнулим текущий список
         devicesSelect.find('option').remove();
         devicesSelect.append('<option>Список обновляется...</option>');
-
         // запустим обновлений списка устройств
         this.plugin.refreshDevices(
             refreshCallback,
@@ -79,7 +78,6 @@ CryptoUI.prototype = {
                     ui.certsSelect.append(option_html);
                 })
             }
-
             if (resultCallback)
                 resultCallback();
         }
@@ -177,9 +175,7 @@ CryptoUI.prototype = {
     },
 
     getKeyByCertificate: function(deviceId, certificate, callback){
-        console.log(this, this.plugin);
         var plugin = this.plugin;
-        console.log(plugin);
         plugin.pluginObject.getKeyByCertificate(deviceId, certificate, callback, $.proxy(this.errorCallback, this));
     },
 

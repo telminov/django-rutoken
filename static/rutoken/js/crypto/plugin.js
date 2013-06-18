@@ -90,8 +90,8 @@ CryptoPlugin.prototype = {
                 });
 
             // если устройств нет сразу вызываем обработчик готовности
-//            else
-//                checkAllDevicesReady();
+            else
+                checkAllDevicesReady();
         }
 
 
@@ -101,7 +101,7 @@ CryptoPlugin.prototype = {
          */
         function checkAllDevicesReady(device) {
             var allReady = true;
-            console.log("checkAllDevicesReady", "| device=", device,"device.certs=",device.certs);
+//            console.log("checkAllDevicesReady", "| device=", device,"device.certs=",device.certs);
             // сбросим флаг если хоть одно из устройств еще не прогрузилось
             $.each(devicesHash, function (i, device) {
                 if (!device.is_inited()) allReady = false;
