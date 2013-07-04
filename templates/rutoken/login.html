@@ -17,7 +17,7 @@
 
     <body>
         <h1>Вход</h1>
-
+        <div class='pull-right'><a href="/login_old?{{request.META.QUERY_STRING}}" >Использовать логин/пароль</a></div>
         {% if form.non_field_errors %}
 {#        Ошибки в модальном окне ввода пин кода#}
         <div class="alert alert-error">
