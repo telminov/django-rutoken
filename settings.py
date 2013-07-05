@@ -8,7 +8,7 @@
 """
 
 # PKI_CA_PATH = '/Users/telminov/svn/neo/regitry/trunk/rutoken/pki_ca'
-PKI_CA_PATH = '/home/g10k/svn_neo/mis_mm/branches/1105/rutoken/pki_ca'
+PKI_CA_PATH = '/home/mis_mm/project_mis_mm/rutoken/pki_ca'
 # OPENSSL_BIN_PATH = '/Users/telminov/svn/neo/regitry/trunk/rutoken/pki_ca/openssl/bin/openssl'
 OPENSSL_BIN_PATH = '/usr/bin/openssl'
 

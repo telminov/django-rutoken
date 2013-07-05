@@ -131,3 +131,4 @@ def verify_sign(cert_path, sign, data):
     """
     # TODO: реализовать метод
     return True
+
